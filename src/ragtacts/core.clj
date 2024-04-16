@@ -1,6 +1,9 @@
 (ns ragtacts.core
   (:refer-clojure :exclude [sync])
   (:require [clojure.string :as str]
+            [clojure.tools.cli :refer [parse-opts]]
+            [clojure.java.io :as io]
+            [clojure.edn :as edn]
             [clojure.tools.logging :as log]
             [ragtacts.connector.base :as connector]
             [ragtacts.connector.web-page :refer [make-web-page-connector]]
@@ -31,7 +34,6 @@
   App
   (sync [this]
     (doseq [connector connectors]
-      (log/info "Syncing:" connector)
       (let [docs (connector/get-docs connector)
             chunks (splitter/split splitter docs)
             vectors (embedder/embed embedder chunks)]
@@ -41,7 +43,6 @@
   (chat [_ prompt]
     (let [prompt-vectors (embedder/embed embedder [(make-chunk prompt)])
           chunks (vector-store/search vector-store prompt-vectors nil)
-          _ (log/debug "Chunks:" chunks)
           prompt (prompt-template/prompt prompt-template prompt {:context (->> chunks
                                                                                (map :text)
                                                                                (str/join "\n"))})
@@ -49,7 +50,7 @@
       answer)))
 
 (defn default-connector [url]
-  (make-web-page-connector url))
+  (make-web-page-connector {:url url}))
 
 (defn default-splitter []
   (make-recursive {:size 1000 :overlap 20}))
@@ -63,7 +64,7 @@
 (defn default-memory [])
 
 (defn default-prompt-template []
-  (make-default-prompt-template))
+  (make-default-prompt-template nil))
 
 (defn default-llm []
   (make-open-ai-llm {:model "gpt-3.5-turbo-0125"}))
@@ -93,9 +94,52 @@
                   :prompt-template prompt-template
                   :llm llm})))
 
-(defn -main [prompt & urls]
-  (-> (app urls)
-      sync
-      (chat prompt)
-      :text
-      println))
+(def components
+  {:connector
+   {:web-page {:cons-fn make-web-page-connector}}
+
+   :splitter
+   {:recursive {:cons-fn make-recursive}}
+
+   :embedder
+   {:open-ai {:cons-fn make-open-ai-embedder}}
+
+   :vector-store
+   {:milvus {:cons-fn make-milvus-vector-store}}
+
+   :memory
+   {}
+
+   :prompt-template
+   {:default {:cons-fn make-default-prompt-template}}
+
+   :llm
+   {:open-ai {:cons-fn make-open-ai-llm}}})
+
+(defn- app-from-config [config urls]
+  (->> (map
+        (fn [[component-key {:keys [type params]}]]
+          (when-let [fn (get-in components [component-key type :cons-fn])]
+            [component-key (fn params)]))
+        config)
+       (into {})
+       (app urls)))
+
+(def cli-options
+  [["-f" "--file FILE" "File for app configuration"
+    :default "resources/default.edn"]
+   ["-u" "--urls URLS" "URLs to sync"
+    :multi true
+    :update-fn conj]
+   ["-p" "--prompt PROMPT" "Prompt to chat with"]])
+
+(defn -main [& args]
+  (let [{:keys [options]} (parse-opts args cli-options)
+        {:keys [file urls prompt]} options]
+    (with-open [r (io/reader file)]
+      (let [config (edn/read (java.io.PushbackReader. r))]
+        (-> (app-from-config config urls)
+            sync
+            (chat prompt)
+            :text
+            println)))))

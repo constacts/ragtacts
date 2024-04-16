@@ -17,6 +17,6 @@
           [(make-doc url (.text doc))])
         []))))
 
-(defn make-web-page-connector [url]
-  (->WebPageConnector url))
+(defn make-web-page-connector [opts]
+  (map->WebPageConnector opts))
 

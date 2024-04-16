@@ -11,5 +11,5 @@
       %s
       Human: %s" context prompt))))
 
-(defn make-default-prompt-template []
+(defn make-default-prompt-template [_]
   (->DefaultPromptTemplate))

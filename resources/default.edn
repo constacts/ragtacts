@@ -1,0 +1,24 @@
+{:splitter
+ {:type :recursive
+  :params {:size 1000
+           :overlap 20}}
+
+ :embedder
+ {:type :open-ai
+  :params {:model "text-embedding-3-small"}}
+
+ :vector-store
+ {:type :milvus
+  :params {:collection "mycoll3"
+           :db "mydb"}}
+
+ :memory
+ {}
+
+ :prompt-template
+ {:type :default
+  :params {}}
+
+ :llm
+ {:type :open-ai
+  :params {:model "gpt-3.5-turbo-0125"}}}
