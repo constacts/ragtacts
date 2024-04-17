@@ -1,4 +1,5 @@
 (ns ragtacts.splitter.recursive
+  (:refer-clojure :exclude [chunk])
   (:require [ragtacts.splitter.base :refer [Splitter]]
             [ragtacts.types :refer [make-chunk]])
   (:import [dev.langchain4j.data.document DocumentSplitter]

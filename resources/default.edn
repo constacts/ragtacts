@@ -13,7 +13,8 @@
            :db "mydb"}}
 
  :memory
- {}
+ {:type :window
+  :params {:size 10}}
 
  :prompt-template
  {:type :default
