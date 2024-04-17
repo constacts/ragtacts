@@ -19,6 +19,7 @@
             [ragtacts.splitter.recursive :refer [make-recursive]]
             [ragtacts.types :refer [make-chunk]]
             [ragtacts.vector-store.base :as vector-store]
+            [ragtacts.vector-store.in-memory :refer [make-in-memory-vector-store]]
             [ragtacts.vector-store.milvus :refer [make-milvus-vector-store]]))
 
 (defn- conversational-msgs [{:keys [chat-history
@@ -87,7 +88,7 @@
   (make-open-ai-embedder {:model "text-embedding-3-small"}))
 
 (defn default-vector-store []
-  (make-milvus-vector-store {:collection "mycoll3" :db "mydb"}))
+  (make-in-memory-vector-store nil))
 
 (defn default-memory []
   (make-window-chat-memory {:size 10}))
@@ -131,7 +132,8 @@
    {:open-ai {:cons-fn make-open-ai-embedder}}
 
    :vector-store
-   {:milvus {:cons-fn make-milvus-vector-store}}
+   {:in-memory {:cons-fn make-in-memory-vector-store}
+    :milvus {:cons-fn make-milvus-vector-store}}
 
    :memory
    {:window {:cons-fn make-window-chat-memory}}
@@ -170,7 +172,8 @@
             _ (log/debug "Config file" config)
             app (app-from-config config urls)]
         (case mode
-          "chat" (do (loop []
+          "chat" (do (sync app)
+                     (loop []
                        (print "\u001B[32mPrompt: \u001B[0m")
                        (flush)
                        (let [prompt (str/trim (read-line))]

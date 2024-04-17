@@ -8,9 +8,8 @@
   :params {:model "text-embedding-3-small"}}
 
  :vector-store
- {:type :milvus
-  :params {:collection "mycoll3"
-           :db "mydb"}}
+ {:type :in-memory
+  :params {}}
 
  :memory
  {:type :window
