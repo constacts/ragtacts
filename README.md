@@ -1,9 +1,14 @@
 # ragtacts
 
-FIXME: my new library.
 
-## Usage
 
+## Usage 
+
+### chat
+
+clj -M -m ragtacts.core -m chat -u "https://...."
+
+### 기타
 FIXME: write usage documentation!
 
 Invoke a library API function from the command-line:
