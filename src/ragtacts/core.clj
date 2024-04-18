@@ -170,7 +170,9 @@
    ["-u" "--urls URLS" "URLs to sync"
     :multi true
     :update-fn conj]
-   ["-p" "--prompt PROMPT" "Prompt to chat with"]])
+   ["-p" "--prompt PROMPT" "Prompt to chat with"]
+   ["-s" "--sync SYNC" "Sync updated data from data source"
+    :default false]])
 
 (defn -main [& args]
   (let [{:keys [options]} (parse-opts args cli-options)
