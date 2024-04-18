@@ -1,7 +1,6 @@
 (ns ragtacts.llm.open-ai
-  (:require [ragtacts.llm.base :refer [Llm]]
+  (:require [ragtacts.llm.base :refer [Llm make-answer]]
             [ragtacts.logging :as log]
-            [ragtacts.types :refer [make-answer]]
             [wkok.openai-clojure.api :as openai]))
 
 (defn- ->message [{:keys [type text]}]

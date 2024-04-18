@@ -1,7 +1,7 @@
 (ns ragtacts.vector-store.milvus
   (:require [cheshire.core :as json]
             [milvus-clj.core :as milvus]
-            [ragtacts.types :refer [make-chunk]]
+            [ragtacts.splitter.base :refer [make-chunk]]
             [ragtacts.vector-store.base :refer [VectorStore]]))
 
 (defn- make-field [[key value]]
@@ -62,18 +62,22 @@
 
 (defrecord MilvusVectorStore [collection host port db]
   VectorStore
-  (save [_ vectors]
+  (insert [_ vectors]
     (with-open [client (milvus/client {:host (or host "localhost")
                                        :port (or port 19530)
                                        :database db})]
       (try
         (create-collection client collection vectors)
         (create-index client collection)
-        (doseq [doc-id (distinct (map :doc-id vectors))]
-          (delete-all-by-doc-id client collection doc-id))
         (insert-all client collection vectors)
         (catch Exception e
           (.printStackTrace e)))))
+
+  (delete-by-id [_ id]
+    (with-open [client (milvus/client {:host (or host "localhost")
+                                       :port (or port 19530)
+                                       :database db})]
+      (delete-all-by-doc-id client collection id)))
 
   (search [_ vectors expr]
     (with-open [client (milvus/client {:host (or host "localhost")

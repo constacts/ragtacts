@@ -15,9 +15,8 @@
             [ragtacts.memory.window :refer [make-window-chat-memory]]
             [ragtacts.prompt-template.base :as prompt-template]
             [ragtacts.prompt-template.default :refer [make-default-prompt-template]]
-            [ragtacts.splitter.base :as splitter]
+            [ragtacts.splitter.base :refer [make-chunk] :as splitter]
             [ragtacts.splitter.recursive :refer [make-recursive]]
-            [ragtacts.types :refer [make-chunk]]
             [ragtacts.vector-store.base :as vector-store]
             [ragtacts.vector-store.in-memory :refer [make-in-memory-vector-store]]
             [ragtacts.vector-store.milvus :refer [make-milvus-vector-store]]))
@@ -31,8 +30,24 @@
    [(make-chat-msg {:type :user :text user-prompt})]))
 
 (defprotocol App
+  (add [this])
   (sync [this])
   (chat [this prompt]))
+
+(defn- apply-change-log [{:keys [splitter embedder vector-store]} {:keys [type doc]}]
+  (log/debug "Apply change log:" type doc)
+  (case type
+    (:create :update) (let [chunks (splitter/split splitter [doc])
+                            _ (binding [*print-length* 5]
+                                (log/debug (str "Chunks count:" (count chunks)) chunks))
+                            vectors (embedder/embed embedder chunks)
+                            _ (binding [*print-length* 5]
+                                (log/debug (str "Vectors count:" (count vectors)) vectors))]
+                        (when (= :update type)
+                          (vector-store/delete-by-id vector-store (:id doc)))
+                        (vector-store/insert vector-store vectors))
+    :delete (vector-store/delete-by-id vector-store (:id doc))
+    (throw (ex-info "Unknown change log type" {:type type}))))
 
 (defrecord AppImpl [id
                     connectors
@@ -43,27 +58,26 @@
                     prompt-template
                     llm]
   App
-  (sync [this]
+  (sync [_]
+    (log/info "Not implemented yet"))
+
+  (add [this]
     (doseq [connector connectors]
-      (log/debug "Sync" connector)
-      (let [docs (connector/get-docs connector)
-            _ (log/debug (str "Documents count:" (count docs)) docs)
-            chunks (splitter/split splitter docs)
-            _ (binding [*print-length* 5]
-                (log/debug (str "Chunks count:" (count chunks)) chunks))
-            vectors (embedder/embed embedder chunks)
-            _ (binding [*print-length* 5]
-                (log/debug (str "Vectors count:" (count vectors)) vectors))]
-        (vector-store/save vector-store vectors)))
+      (log/debug "Add" connector)
+      (let [{:keys [change-logs]} (connector/get-change-logs connector nil)]
+        (doseq [change-log change-logs]
+          (apply-change-log {:splitter splitter
+                             :embedder embedder
+                             :vector-store vector-store} change-log))))
     this)
 
   (chat [_ prompt]
     (let [prompt-vectors (embedder/embed embedder [(make-chunk prompt)])
           _ (binding [*print-length* 5]
-              (log/debug (str "Vectors count:" (count prompt-vectors)) prompt-vectors))
+              (log/debug (str "Prompt vectors count:" (count prompt-vectors)) prompt-vectors))
           chunks (vector-store/search vector-store prompt-vectors nil)
           _ (binding [*print-length* 5]
-              (log/debug (str "Chunks count:" (count chunks)) chunks))
+              (log/debug (str "Search result chunks count:" (count chunks)) chunks))
           _ (memory/add-chat memory (make-chat-msg {:type :user :text prompt}))
           chat-history (memory/get-chat-history memory)
           system-prompt (prompt-template/prompt prompt-template {:context (->> chunks
@@ -76,7 +90,6 @@
       (memory/add-chat memory (make-chat-msg {:type :ai :text (:text answer)}))
       (log/debug "Memory:" (memory/get-chat-history memory))
       answer)))
-
 
 (defn default-connector [url]
   (make-web-page-connector {:url url}))
@@ -154,7 +167,7 @@
        (app urls)))
 
 (def cli-options
-  [["-m" "--mode [query|chat|sync|server]" "Run in chat or server mode"
+  [["-m" "--mode [query|chat|server]" "Run in chat or server mode"
     :default "query"]
    ["-f" "--file FILE" "File for app configuration"
     :default "resources/default.edn"]
@@ -172,7 +185,7 @@
             _ (log/debug "Config file" config)
             app (app-from-config config urls)]
         (case mode
-          "chat" (do (sync app)
+          "chat" (do (add app)
                      (loop []
                        (print "\u001B[32mPrompt: \u001B[0m")
                        (flush)
@@ -181,6 +194,5 @@
                            (println "\u001B[34mAI:" (:text (chat app prompt)) "\u001B[0m")
                            (recur))))
                      (println "\u001B[34mAI: Bye~!\u001B[0m"))
-          "sync" (sync app)
           "server" (println "Server mode not implemented yet")
           (println "\u001B[34mAI:" (:text (chat app prompt)) "\u001B[0m"))))))

@@ -1,6 +1,6 @@
 (ns ragtacts.embedder.open-ai
   (:require [ragtacts.embedder.base :refer [Embedder]]
-            [ragtacts.types :refer [make-vectors]]
+            [ragtacts.vector-store.base :refer [make-vectors]]
             [wkok.openai-clojure.api :as openai]))
 
 (defrecord OpenAIEmbedder [model]
