@@ -22,5 +22,16 @@
 (defn make-change-log [opts]
   (map->ChangeLog opts))
 
+(defrecord ChangeLogResult [change-logs last-change])
+
+(defn make-change-log-result
+  ([change-logs]
+   (make-change-log-result change-logs nil))
+  ([change-logs last-change]
+   (->ChangeLogResult change-logs last-change)))
+
+(def empty-change-log-result
+  (make-change-log-result [] nil))
+
 (defprotocol Connector
   (get-change-logs [this last-change]))

@@ -122,17 +122,13 @@
                  memory
                  prompt-template
                  llm]}]
-   (let [memory (or memory (default-memory))
-         promt-template (or prompt-template (default-prompt-template))]
-     (map->AppImpl {:connectors (or connectors (map default-connector urls))
-                    :splitter (or splitter (default-splitter))
-                    :embedder (or embedder (default-embedder))
-                    :vector-store (or vector-store (default-vector-store))
-                    :memory memory
-                    :prompt-template prompt-template
-                    :llm (assoc (or llm (default-llm))
-                                :memory memory
-                                :promt-template promt-template)}))))
+   (map->AppImpl {:connectors (or connectors (map default-connector urls))
+                  :splitter (or splitter (default-splitter))
+                  :embedder (or embedder (default-embedder))
+                  :vector-store (or vector-store (default-vector-store))
+                  :memory (or memory (default-memory))
+                  :prompt-template (or prompt-template (default-prompt-template))
+                  :llm (or llm (default-llm))})))
 
 (def components
   {:connector
