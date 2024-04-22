@@ -8,7 +8,8 @@
         ch.qos.logback/logback-classic {:mvn/version "1.4.14"}
         com.constacts/milvus-clj {:mvn/version "0.2.1"}
         dev.langchain4j/langchain4j {:mvn/version "0.29.1"}
-        net.clojars.wkok/openai-clojure {:mvn/version "0.16.0"}}
+        net.clojars.wkok/openai-clojure {:mvn/version "0.16.0"}
+        conman/conman {:mvn/version "0.9.6"}}
  :aliases
  {:build {:deps {io.github.clojure/tools.build {:mvn/version "0.9.4"}
                  slipset/deps-deploy {:mvn/version "0.2.1"}}
