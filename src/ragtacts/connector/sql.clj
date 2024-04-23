@@ -1,7 +1,8 @@
 (ns ragtacts.connector.sql
   (:require [ragtacts.connector.base :refer [Connector empty-change-log-result
                                              make-change-log
-                                             make-change-log-result make-doc]]
+                                             make-change-log-result]]
+            [ragtacts.loader.base :refer [make-doc]]
             [conman.core :as conman])
   (:import [dev.langchain4j.data.document Document]
            [dev.langchain4j.data.document.transformer HtmlTextExtractor]))

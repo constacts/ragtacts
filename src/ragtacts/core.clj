@@ -4,7 +4,9 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.cli :refer [parse-opts]]
+            [overtone.at-at :as at]
             [ragtacts.connector.base :as connector]
+            [ragtacts.connector.folder :refer [make-folder-connector]]
             [ragtacts.connector.web-page :refer [make-web-page-connector]]
             [ragtacts.embedder.base :as embedder]
             [ragtacts.embedder.open-ai :refer [make-open-ai-embedder]]
@@ -30,9 +32,9 @@
    [(make-chat-msg {:type :user :text user-prompt})]))
 
 (defprotocol App
-  (add [this])
-  (sync [this])
-  (chat [this prompt]))
+  (sync [this callback])
+  (chat [this prompt])
+  (stop [this]))
 
 (defn- apply-change-log [{:keys [splitter embedder vector-store]} {:keys [type doc]}]
   (log/debug "Apply change log:" type doc)
@@ -58,17 +60,24 @@
                     prompt-template
                     llm]
   App
-  (sync [_]
-    (log/info "Not implemented yet"))
-
-  (add [this]
+  (sync [this callback]
+    (log/debug "Starting Sync" connectors)
     (doseq [connector connectors]
-      (log/debug "Add" connector)
-      (let [{:keys [change-logs]} (connector/get-change-logs connector nil)]
-        (doseq [change-log change-logs]
-          (apply-change-log {:splitter splitter
-                             :embedder embedder
-                             :vector-store vector-store} change-log))))
+      (connector/connect
+       connector
+       (fn [{:keys [change-log-result]}]
+         (let [{:keys [change-logs]} change-log-result]
+           (doseq [change-log change-logs]
+             (apply-change-log {:splitter splitter
+                                :embedder embedder
+                                :vector-store vector-store} change-log))
+           (callback {:type :complete :connector connector})))))
+    this)
+
+  (stop [this]
+    (log/debug "Stopping Sync")
+    (doseq [connector connectors]
+      (connector/close connector))
     this)
 
   (chat [_ prompt]
@@ -91,9 +100,6 @@
       (log/debug "Memory:" (memory/get-chat-history memory))
       answer)))
 
-(defn default-connector [url]
-  (make-web-page-connector {:url url}))
-
 (defn default-splitter []
   (make-recursive {:size 1000 :overlap 20}))
 
@@ -112,17 +118,33 @@
 (defn default-llm []
   (make-open-ai-llm {:model "gpt-3.5-turbo-0125"}))
 
+(defn- http? [data-sources]
+  (some? (or (re-find #"^https://" data-sources)
+             (re-find #"^http://" data-sources))))
+
+(defn- path? [data-sources]
+  (try
+    (.exists (io/file data-sources))
+    (catch Exception _
+      false)))
+
+(defn- infer-connector [data-sources]
+  (cond
+    (http? data-sources) (make-web-page-connector {:url data-sources})
+    (path? data-sources) (make-folder-connector {:path data-sources})
+    :else (throw (ex-info "Unknown data source" {:data-sources data-sources}))))
+
 (defn app
-  ([urls]
-   (app urls {}))
-  ([urls {:keys [connectors
-                 splitter
-                 embedder
-                 vector-store
-                 memory
-                 prompt-template
-                 llm]}]
-   (map->AppImpl {:connectors (or connectors (map default-connector urls))
+  ([data-sources]
+   (app data-sources {}))
+  ([data-sources {:keys [connectors
+                         splitter
+                         embedder
+                         vector-store
+                         memory
+                         prompt-template
+                         llm]}]
+   (map->AppImpl {:connectors (or connectors (map infer-connector data-sources))
                   :splitter (or splitter (default-splitter))
                   :embedder (or embedder (default-embedder))
                   :vector-store (or vector-store (default-vector-store))
@@ -153,44 +175,88 @@
    :llm
    {:open-ai {:cons-fn make-open-ai-llm}}})
 
-(defn- app-from-config [config urls]
+(defn- app-from-config [config data-sources]
   (->> (map
         (fn [[component-key {:keys [type params]}]]
           (when-let [fn (get-in components [component-key type :cons-fn])]
             [component-key (fn params)]))
         config)
        (into {})
-       (app urls)))
+       (app data-sources)))
+
+(defn- wait [{:keys [connectors]}]
+
+  (let [latches (into {} (map (fn [connector]
+                                [connector (promise)])
+                              connectors))]
+    (at/interspaced 1000
+                    (fn []
+                      (doseq [connector connectors]
+                        (when (connector/closed? connector)
+                          (deliver (get latches connector) :complete))))
+                    (at/mk-pool))
+    (doseq [latch (vals latches)]
+      @latch)))
 
 (def cli-options
   [["-m" "--mode [query|chat|server]" "Run in chat or server mode"
     :default "query"]
    ["-f" "--file FILE" "File for app configuration"
     :default "resources/default.edn"]
-   ["-u" "--urls URLS" "URLs to sync"
+   ["-d" "--data-sources URLs or PATHs" "Data sources to sync with"
     :multi true
     :update-fn conj]
-   ["-p" "--prompt PROMPT" "Prompt to chat with"]
-   ["-s" "--sync SYNC" "Sync updated data from data source"
-    :default false]])
+   ["-p" "--prompt PROMPT" "Prompt to chat with"]])
 
 (defn -main [& args]
   (let [{:keys [options]} (parse-opts args cli-options)
-        {:keys [mode file urls prompt]} options]
+        {:keys [mode file data-sources prompt]} options]
     (log/debug "Options" options)
     (with-open [r (io/reader file)]
       (let [config (edn/read (java.io.PushbackReader. r))
             _ (log/debug "Config file" config)
-            app (app-from-config config urls)]
+            app (app-from-config config data-sources)]
         (case mode
-          "chat" (do (add app)
-                     (loop []
-                       (print "\u001B[32mPrompt: \u001B[0m")
-                       (flush)
-                       (let [prompt (str/trim (read-line))]
-                         (when-not (= prompt "")
-                           (println "\u001B[34mAI:" (:text (chat app prompt)) "\u001B[0m")
-                           (recur))))
-                     (println "\u001B[34mAI: Bye~!\u001B[0m"))
+          "chat" (let [latch (promise)]
+                   (print "Syncing...")
+                   (flush)
+                   (sync app (fn [_] (deliver latch :complete)))
+                   (println @latch)
+                   (loop []
+                     (print "\u001B[32mPrompt: \u001B[0m")
+                     (flush)
+                     (let [prompt (str/trim (read-line))]
+                       (when-not (= prompt "")
+                         (println "\u001B[34mAI:" (:text (chat app prompt)) "\u001B[0m")
+                         (recur))))
+                   (println "\u001B[34mAI: Bye~!\u001B[0m"))
           "server" (println "Server mode not implemented yet")
+          "test" (do
+                   (.addShutdownHook (Runtime/getRuntime) (Thread. #(-> app stop wait)))
+                   (-> app
+                       (sync
+                        ;; Callback that runs when a sync event occurs.
+                        (fn [event]
+                          (log/debug "Event" event)
+                          (when (= :complete (:type event))
+                            (println (chat app "Tell me about RAG technology."))
+                            ;; 2. If you get an answer and add another document to ~/papers, 
+                            ;;    it will sync back up and give you a new answer.
+                            ;; $ ls -1 ~/papers
+                            ;; RAPTOR.pdf
+                            ;; Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks.pdf
+                            )))
+                       wait))
           (println "\u001B[34mAI:" (:text (chat app prompt)) "\u001B[0m"))))))
+
+(comment
+
+  (require '[ragtacts.core :refer :all])
+
+  ;; 1. Initially, you have one document.
+  ;; $ ls -1 ~/papers
+  ;; Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks.pdf
+
+
+  ;;
+  )
