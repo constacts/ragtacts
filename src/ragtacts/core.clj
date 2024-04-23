@@ -7,6 +7,7 @@
             [overtone.at-at :as at]
             [ragtacts.connector.base :as connector]
             [ragtacts.connector.folder :refer [make-folder-connector]]
+            [ragtacts.connector.sql :refer [make-sql-connector]]
             [ragtacts.connector.web-page :refer [make-web-page-connector]]
             [ragtacts.embedder.base :as embedder]
             [ragtacts.embedder.open-ai :refer [make-open-ai-embedder]]
@@ -154,7 +155,8 @@
 
 (def components
   {:connector
-   {:web-page {:cons-fn make-web-page-connector}}
+   {:web-page {:cons-fn make-web-page-connector}
+    :sql {:cons-fn make-sql-connector}}
 
    :splitter
    {:recursive {:cons-fn make-recursive}}
@@ -177,9 +179,14 @@
 
 (defn- app-from-config [config data-sources]
   (->> (map
-        (fn [[component-key {:keys [type params]}]]
-          (when-let [fn (get-in components [component-key type :cons-fn])]
-            [component-key (fn params)]))
+        (fn [[component-key value]]
+          (if (= component-key :connectors)
+            [:connectors (map
+                          #(when-let [fn (get-in components [:connector (:type %) :cons-fn])]
+                             (fn (:params %)))
+                          value)]
+            (when-let [fn (get-in components [component-key (:type value) :cons-fn])]
+              [component-key (fn (:params value))])))
         config)
        (into {})
        (app data-sources)))
@@ -239,7 +246,7 @@
                         (fn [event]
                           (log/debug "Event" event)
                           (when (= :complete (:type event))
-                            (println (chat app "Tell me about RAG technology."))
+                            (println (chat app "컨스택츠는 무엇입니까"))
                             ;; 2. If you get an answer and add another document to ~/papers, 
                             ;;    it will sync back up and give you a new answer.
                             ;; $ ls -1 ~/papers
