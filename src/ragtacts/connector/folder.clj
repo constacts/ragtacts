@@ -38,8 +38,9 @@
       (beholder/stop @!watcher)))
 
   (closed? [_]
-    (when @!watcher
-      (.isClosed @!watcher))))
+    (if @!watcher
+      (.isClosed @!watcher)
+      true)))
 
 (defn make-folder-connector [opts]
   (map->FolderConnector (merge opts {:!watcher (atom nil)})))

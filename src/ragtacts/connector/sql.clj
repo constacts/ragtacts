@@ -15,7 +15,7 @@
         (= db-operation "D") :delete
         :else (throw (ex-info (str "Unknown db operation: " db-operation) {}))))
 
-(defrecord SqlConnector [jdbc-url table-name batch-size interval !job]
+(defrecord SqlConnector [jdbc-url table-name batch-size interval !job pool]
   Connector
   (connect [_ callback]
     (let [last-id (atom 0)]
@@ -37,11 +37,12 @@
                                                                           rows))]
                        (callback {:type :complete :change-log-result change-log-result})
                        (reset! last-id (:id (last rows)))))))
-               (at/mk-pool)))))
+               pool))))
   (close [_]
     (log/debug "Stop SqlConnector" jdbc-url)
     (when @!job
-      (at/stop @!job)))
+      (at/stop @!job)
+      (at/stop-and-reset-pool! pool)))
 
   (closed? [_]
     (not (:scheduled? (:val @!job)))))
@@ -49,7 +50,8 @@
 (defn make-sql-connector [opts]
   (map->SqlConnector (merge {:!job (atom nil)
                              :interval 5000
-                             :batch-size 10}
+                             :batch-size 10
+                             :pool (at/mk-pool)}
                             opts)))
 
 (comment

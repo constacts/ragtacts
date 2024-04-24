@@ -21,9 +21,4 @@
 
  :llm
  {:type :open-ai
-  :params {:model "gpt-3.5-turbo-0125"}}
-
- :connectors [{:type :sql :params {:jdbc-url "jdbc:postgresql://localhost/other_test_db?user=otheradmin&password=otheradmin"
-                                   :table-name "rgtcs_articles_change_logs"
-                                   :interval 3000
-                                   :batch-size 1}}]}
+  :params {:model "gpt-3.5-turbo-0125"}}}

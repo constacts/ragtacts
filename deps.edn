@@ -2,6 +2,7 @@
  :deps {org.clojure/clojure {:mvn/version "1.11.2"}
         org.clojure/tools.cli {:mvn/version "1.1.230"}
         hato/hato {:mvn/version "0.9.0"}
+        clj-ulid/clj-ulid {:mvn/version "1.0.0"}
         org.clj-commons/humanize {:mvn/version "1.0"}
         cheshire/cheshire {:mvn/version "5.13.0"}
         org.clojure/tools.logging {:mvn/version "1.3.0"}

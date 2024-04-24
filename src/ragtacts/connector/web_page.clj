@@ -35,7 +35,8 @@
   (close [_]
     (log/debug "Stop WebPageConnector" url)
     (when @!handler
-      (at/stop @!handler)))
+      (at/stop @!handler)
+      (at/stop-and-reset-pool! pool)))
 
   (closed? [_]
     (not (:scheduled? (:val @!handler)))))
