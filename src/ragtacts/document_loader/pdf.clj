@@ -6,9 +6,9 @@
 
 (defrecord PdfLoader []
   DocumentLoader
-  (load-doc [_ doc-id path]
+  (load-doc [_ doc-id file]
     (let [^DocumentParser parser (ApacheTikaDocumentParser.)
-          ^Document doc (.parse parser (io/input-stream (.toFile path)))]
+          ^Document doc (.parse parser (io/input-stream file))]
       (make-doc doc-id (.text doc)))))
 
 (defn make-pdf-loader [opts]
