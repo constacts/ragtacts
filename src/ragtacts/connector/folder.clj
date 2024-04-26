@@ -6,13 +6,17 @@
                                              make-change-log-result]]
             [ragtacts.document-loader.base :refer [load-doc make-doc]]
             [ragtacts.document-loader.html :refer [make-html-loader]]
-            [ragtacts.document-loader.pdf :refer [make-pdf-loader]]
+            [ragtacts.document-loader.office-doc :refer [make-office-doc-loader]]
             [ragtacts.logging :as log]))
 
 (defn- loader-for-file [path]
   (cond
     (str/ends-with? path ".html") (make-html-loader {})
-    (str/ends-with? path ".pdf") (make-pdf-loader {})
+    (or (str/ends-with? path ".pdf")
+        (str/ends-with? path ".doc")
+        (str/ends-with? path ".docx")
+        (str/ends-with? path ".ppt")
+        (str/ends-with? path ".pptx")) (make-office-doc-loader {})
     :else nil))
 
 (defn- load-all-files [path callback]
