@@ -76,6 +76,5 @@
 
 (comment
 
-  (make-collection {:collections [1 2]})
   ;;
   )

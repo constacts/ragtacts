@@ -1,25 +1,16 @@
 (ns ragtacts.core
   (:refer-clojure :exclude [sync chunk])
-  (:require [clojure.edn :as edn]
-            [clojure.java.io :as io]
-            [clojure.string :as str]
-            [clojure.tools.cli :refer [parse-opts]]
-            [overtone.at-at :as at]
+  (:require [clojure.java.io :as io]
             [ragtacts.app :as app :refer [make-app]]
             [ragtacts.collection :as collection :refer [make-collection]]
-            [ragtacts.connector.base :as connector]
             [ragtacts.connector.folder :refer [make-folder-connector]]
-            [ragtacts.connector.sql :refer [make-sql-connector]]
             [ragtacts.connector.web-page :refer [make-web-page-connector]]
             [ragtacts.embedder.open-ai :refer [make-open-ai-embedder]]
             [ragtacts.llm.open-ai :refer [make-open-ai-llm]]
-            [ragtacts.logging :as log]
             [ragtacts.memory.window :refer [make-window-chat-memory]]
             [ragtacts.prompt-template.default :refer [make-default-prompt-template]]
-            [ragtacts.server :as server]
             [ragtacts.splitter.recursive :refer [make-recursive]]
-            [ragtacts.vector-store.in-memory :refer [make-in-memory-vector-store]]
-            [ragtacts.vector-store.milvus :refer [make-milvus-vector-store]]))
+            [ragtacts.vector-store.in-memory :refer [make-in-memory-vector-store]]))
 
 (defn default-splitter []
   (make-recursive {:size 1000 :overlap 20}))
@@ -63,139 +54,47 @@
    :prompt-template (default-prompt-template)
    :llm (default-llm)})
 
-(def components
-  {:connector
-   {:web-page {:cons-fn make-web-page-connector}
-    :sql {:cons-fn make-sql-connector}}
+(defn app
+  ([data-sources]
+   (app data-sources {}))
+  ([data-sources components]
+   (let [components (merge default-components components)
+         connectors (map infer-connector data-sources)]
+     (make-app (assoc (merge default-components components)
+                      :collection (make-collection (if (seq connectors)
+                                                     (assoc components :connectors connectors)
+                                                     components)))))))
 
-   :splitter
-   {:recursive {:cons-fn make-recursive}}
+(defn sync [app callback]
+  (collection/sync (:collection app)
+                   (fn [event]
+                     (callback app event)))
+  app)
 
-   :embedder
-   {:open-ai {:cons-fn make-open-ai-embedder}}
+(defn stop [app]
+  (collection/stop (:collection app)))
 
-   :vector-store
-   {:in-memory {:cons-fn make-in-memory-vector-store}
-    :milvus {:cons-fn make-milvus-vector-store}}
-
-   :memory
-   {:window {:cons-fn make-window-chat-memory}}
-
-   :prompt-template
-   {:default {:cons-fn make-default-prompt-template}}
-
-   :llm
-   {:open-ai {:cons-fn make-open-ai-llm}}})
-
-(defn- eval-config [config]
-  (into {}
-        (map
-         (fn [[component-key value]]
-           (if (= component-key :connectors)
-             [:connectors (map
-                           #(when-let [fn (get-in components [:connector (:type %) :cons-fn])]
-                              (fn (:params %)))
-                           value)]
-             (when-let [fn (get-in components [component-key (:type value) :cons-fn])]
-               [component-key (fn (:params value))])))
-         config)))
-
-(defn- wait [{:keys [connectors]}]
-  (let [latches (into {} (map (fn [connector]
-                                [connector (promise)])
-                              connectors))
-        pool (at/mk-pool)]
-    (at/interspaced 1000
-                    (fn []
-                      (doseq [connector connectors]
-                        (when (connector/closed? connector)
-                          (deliver (get latches connector) :complete))))
-                    pool)
-    (doseq [latch (vals latches)]
-      @latch)
-    (at/stop-and-reset-pool! pool)))
-
-(def cli-options
-  [["-m" "--mode [query|chat|server]" "Run in chat or server mode"
-    :default "query"]
-   ["-f" "--file FILE" "File for app configuration"
-    :default "resources/default.edn"]
-   ["-d" "--data-sources URLs or PATHs" "Data sources to sync with"
-    :multi true
-    :update-fn conj]
-   ["-p" "--prompt PROMPT" "Prompt to chat with"]])
-
-(def usage
-  "Usage: 
-
-  query mode: [default mode]
-    $ ragtacts -p \"prompt\" -d [Url or Path] -d ...
-      or
-    $ ragtacts -m query -p \"prompt\" -d [Url or Path] -d ...
-   
-  chat mode: 
-    $ ragtacts -m chat -d [Url or Path] -d ...
-   
-  server mode: 
-    $ ragtacts -m server
-")
-
-(defn -main [& args]
-  (let [{:keys [options]} (parse-opts args cli-options)
-        {:keys [mode file data-sources prompt]} options
-        config (with-open [r (io/reader file)]
-                 (edn/read (java.io.PushbackReader. r)))
-        _ (log/debug "Config file" config)
-        components (merge default-components (eval-config config))
-        connectors (map infer-connector data-sources)
-        collection (make-collection (if (seq connectors)
-                                      (assoc components :connectors connectors)
-                                      components))
-        app (make-app (assoc components :collection collection))
-        stop-app (fn []
-                   (-> collection
-                       collection/stop
-                       wait)
-                   (shutdown-agents))
-        set-shutdown-hook (fn []
-
-                            (.addShutdownHook (Runtime/getRuntime) (Thread.
-                                                                    #(do
-                                                                       (log/error "Run hook")
-                                                                       (stop-app)))))]
-    (case mode
-      "chat" (let [latch (promise)]
-               (set-shutdown-hook)
-               (print "Syncing...")
-               (flush)
-               (collection/sync collection (fn [_] (deliver latch :complete)))
-               (println @latch)
-               (loop []
-                 (print "\u001B[32mPrompt: \u001B[0m")
-                 (flush)
-                 (let [prompt (str/trim (read-line))]
-                   (when-not (= prompt "")
-                     (println "\u001B[34mAI:" (:text (app/chat app prompt)) "\u001B[0m"))
-                   (recur))))
-      "server" (let [server (server/start app {})]
-                 (.addShutdownHook (Runtime/getRuntime) (Thread. #(do
-                                                                    (server/stop server)
-                                                                    (stop-app)))))
-      "query" (let [latch (promise)]
-                (collection/sync collection (fn [_] (deliver latch :complete)))
-                (println @latch)
-                (println "\u001B[34mAI:" (:text (app/chat app prompt)) "\u001B[0m")
-                (stop-app))
-      (println usage))))
+(def chat app/chat)
 
 (comment
 
-  (require '[ragtacts.core :refer :all])
-
+  (require '[ragtacts.core :refer [app sync chat]])
   ;; 1. Initially, you have one document.
   ;; $ ls -1 ~/papers
   ;; Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks.pdf
 
-
+  (-> (app ["https://aws.amazon.com/what-is/retrieval-augmented-generation/"
+            "~/papers"])
+      (sync
+       ;; Callback that is called when a sync event occurs.
+       (fn [app event]
+         (when (= :complete (:type event))
+           (println (chat app "Tell me about RAG technology."))
+           ;; 2. If you get an answer and add antoher document to ~/papers,
+           ;;    it will sync up and give you a new answer.
+           ;; $ ls -1 ~/papers
+           ;; RAPTOR.pdf
+           ;; Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks.pdf
+           ))))
   ;;
   )

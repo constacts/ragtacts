@@ -30,3 +30,5 @@
 /log
 db.json
 last-change-*.edn
+*.dmg
+macos-package.sh

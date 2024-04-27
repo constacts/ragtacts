@@ -1,6 +1,7 @@
 (ns build
   (:refer-clojure :exclude [test])
-  (:require [clojure.tools.deps :as t]
+  (:require [clojure.string :as string]
+            [clojure.tools.deps :as t]
             [clojure.tools.build.api :as b]
             [deps-deploy.deps-deploy :as dd]))
 
@@ -8,7 +9,11 @@
 (def version "0.1.0-SNAPSHOT")
 #_; alternatively, use MAJOR.MINOR.COMMITS:
   (def version (format "1.0.%s" (b/git-count-revs nil)))
-(def class-dir "target/classes")
+(def main-cls (string/join "." (filter some? [(name lib) "main"])))
+(def target-dir "target")
+(def class-dir (str target-dir "/" "classes"))
+(def uber-file (format "%s/%s-standalone.jar" target-dir (name lib)))
+(def basis (b/create-basis {:project "deps.edn"}))
 
 (defn test "Run all the tests." [opts]
   (println "\nRunning tests...")
@@ -49,6 +54,23 @@
   (let [opts (jar-opts opts)]
     (b/install opts))
   opts)
+
+(defn uber [args]
+  (println "Compiling Clojure...")
+  (b/compile-clj {:basis basis
+                  :src-dirs ["src"]
+                  :class-dir class-dir})
+  (println "\nCopying source...")
+  (b/copy-dir {:src-dirs ["resources" "src"] :target-dir class-dir})
+  (println "Making uberjar...")
+  (b/uber {:class-dir class-dir
+           :uber-file uber-file
+           :main main-cls
+           :basis basis
+           :exclude [#"^META-INF/license/LICENSE\.boringssl\.txt$"
+                     #"^META-INF/license/LICENSE\.mvn-wrapper\.txt$"
+                     #"^META-INF/license/LICENSE\.aix-netbsd\.txt$"
+                     #"^META-INF/license/LICENSE\.tomcat-native\.txt$"]}))
 
 (defn deploy "Deploy the JAR to Clojars." [opts]
   (let [{:keys [jar-file] :as opts} (jar-opts opts)]

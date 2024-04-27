@@ -38,32 +38,35 @@
                          :last-modified (.lastModified file)})
                       (file-seq (io/file path)))))
 
+(str/replace "/papers" #"~" (System/getProperty "user.home"))
+
 (defrecord FolderConnector [path !watcher]
   Connector
   (connect [_ callback {:keys [last-change]}]
-    (future
-      (Thread/sleep 500)
-      (callback {:type :complete :change-log-result empty-change-log-result})
-      (when-not (= (sort-by :name last-change) (get-last-modifed path))
-        (load-all-files path callback)))
-    (reset! !watcher (beholder/watch
-                      (fn [{:keys [type path]}]
-                        (log/debug type path)
-                        (when-let [loader (loader-for-file path)]
-                          (let [doc (when-not (= :delete type)
-                                      (load-doc loader (str path) (.toFile path)))
-                                change-log (case type
-                                             :create (make-change-log {:type :create
-                                                                       :doc doc})
+    (let [path (str/replace path #"~" (System/getProperty "user.home"))]
+      (future
+        (Thread/sleep 500)
+        (callback {:type :complete :change-log-result empty-change-log-result})
+        (when-not (= (sort-by :name last-change) (get-last-modifed path))
+          (load-all-files path callback)))
+      (reset! !watcher (beholder/watch
+                        (fn [{:keys [type path]}]
+                          (log/debug type path)
+                          (when-let [loader (loader-for-file path)]
+                            (let [doc (when-not (= :delete type)
+                                        (load-doc loader (str path) (.toFile path)))
+                                  change-log (case type
+                                               :create (make-change-log {:type :create
+                                                                         :doc doc})
                                           ;;  :modify (make-change-log {:type :update
                                           ;;                            :doc nil})
-                                             :delete (make-change-log {:type :delete
-                                                                       :doc (make-doc (str path) nil)})
-                                             (log/error "Unknown type" type path))
-                                change-log-result (make-change-log-result [change-log])]
-                            (log/debug change-log-result)
-                            (callback {:type :complete :change-log-result change-log-result}))))
-                      path)))
+                                               :delete (make-change-log {:type :delete
+                                                                         :doc (make-doc (str path) nil)})
+                                               (log/error "Unknown type" type path))
+                                  change-log-result (make-change-log-result [change-log])]
+                              (log/debug change-log-result)
+                              (callback {:type :complete :change-log-result change-log-result}))))
+                        path))))
 
   (close [_]
     (log/debug "Stopping FolderConnector" path)
