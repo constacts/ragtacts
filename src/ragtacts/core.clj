@@ -16,6 +16,7 @@
             [ragtacts.logging :as log]
             [ragtacts.memory.window :refer [make-window-chat-memory]]
             [ragtacts.prompt-template.default :refer [make-default-prompt-template]]
+            [ragtacts.server :as server]
             [ragtacts.splitter.recursive :refer [make-recursive]]
             [ragtacts.vector-store.in-memory :refer [make-in-memory-vector-store]]
             [ragtacts.vector-store.milvus :refer [make-milvus-vector-store]]))
@@ -149,10 +150,13 @@
                                       (assoc components :connectors connectors)
                                       components))
         app (make-app (assoc components :collection collection))
+        stop-app (fn []
+                   (-> collection
+                       collection/stop
+                       wait)
+                   (shutdown-agents))
         set-shutdown-hook (fn []
-                            (.addShutdownHook (Runtime/getRuntime) (Thread. #(-> collection
-                                                                                 collection/stop
-                                                                                 wait))))]
+                            (.addShutdownHook (Runtime/getRuntime) (Thread. stop-app)))]
     (case mode
       "chat" (let [latch (promise)]
                (set-shutdown-hook)
@@ -168,14 +172,17 @@
                      (println "\u001B[34mAI:" (:text (app/chat app prompt)) "\u001B[0m")
                      (recur))))
                (println "\u001B[34mAI: Bye~!\u001B[0m"))
-      "server" (println "Server mode not implemented yet")
+      "server" (let [server (server/start app {})]
+                 (.addShutdownHook (Runtime/getRuntime) (Thread. #(do
+                                                                    (server/stop server)
+                                                                    (stop-app)))))
       "query" (let [latch (promise)]
                 (collection/sync collection (fn [_] (deliver latch :complete)))
                 (println @latch)
                 (println "\u001B[34mAI:" (:text (app/chat app prompt)) "\u001B[0m")
-                (collection/stop collection))
-      (println usage))
-    (shutdown-agents)))
+                (collection/stop collection)
+                (shutdown-agents))
+      (println usage))))
 
 (comment
 

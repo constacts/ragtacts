@@ -35,7 +35,7 @@
       (connector/connect
        connector
        (fn [{:keys [change-log-result]}]
-         (log/info "Change log result" change-log-result)
+         (log/debug "Change log result" change-log-result)
          (let [{:keys [change-logs]} change-log-result]
            (doseq [change-log change-logs]
              (apply-change-log {:splitter splitter
