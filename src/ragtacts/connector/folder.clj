@@ -2,12 +2,14 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [nextjournal.beholder :as beholder]
-            [ragtacts.connector.base :refer [Connector make-change-log
+            [ragtacts.connector.base :refer [Connector empty-change-log-result
+                                             make-change-log
                                              make-change-log-result]]
             [ragtacts.document-loader.base :refer [load-doc make-doc]]
             [ragtacts.document-loader.html :refer [make-html-loader]]
             [ragtacts.document-loader.office-doc :refer [make-office-doc-loader]]
-            [ragtacts.logging :as log]))
+            [ragtacts.logging :as log])
+  (:import [java.io File]))
 
 (defn- loader-for-file [path]
   (cond
@@ -30,12 +32,20 @@
           (callback {:type :complete
                      :change-log-result (make-change-log-result [change-log])}))))))
 
+(defn- get-last-modifed [path]
+  (sort-by :name (map (fn [^File file]
+                        {:path (.getAbsolutePath file)
+                         :last-modified (.lastModified file)})
+                      (file-seq (io/file path)))))
+
 (defrecord FolderConnector [path !watcher]
   Connector
-  (connect [_ callback]
+  (connect [_ callback {:keys [last-change]}]
     (future
       (Thread/sleep 500)
-      (load-all-files path callback))
+      (callback {:type :complete :change-log-result empty-change-log-result})
+      (when-not (= (sort-by :name last-change) (get-last-modifed path))
+        (load-all-files path callback)))
     (reset! !watcher (beholder/watch
                       (fn [{:keys [type path]}]
                         (log/debug type path)
@@ -56,8 +66,10 @@
                       path)))
 
   (close [_]
+    (log/debug "Stopping FolderConnector" path)
     (when @!watcher
-      (beholder/stop @!watcher)))
+      (beholder/stop @!watcher)
+      (get-last-modifed path)))
 
   (closed? [_]
     (if @!watcher

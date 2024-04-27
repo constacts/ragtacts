@@ -1,6 +1,8 @@
 (ns ragtacts.collection
   (:refer-clojure :exclude [sync])
   (:require [clj-ulid :refer [ulid]]
+            [clojure.edn :as edn]
+            [clojure.java.io :as io]
             [ragtacts.connector.base :as connector]
             [ragtacts.embedder.base :as embedder]
             [ragtacts.logging :as log]
@@ -27,6 +29,19 @@
   (stop [this])
   (search [this text metadata]))
 
+(defn- last-change-file-name [connector]
+  (let [connector-name (str (type connector))]
+    (str "last-change-" connector-name ".edn")))
+
+(defn- load-last-change [connector]
+  (try
+    (with-open [r (io/reader (last-change-file-name connector))]
+      (edn/read (java.io.PushbackReader. r)))
+    (catch Exception _)))
+
+(defn- save-last-change [connector last-change]
+  (spit (last-change-file-name connector) last-change))
+
 (defrecord CollectionImpl [id name connectors splitter embedder vector-store]
   Collection
   (sync [this callback]
@@ -41,7 +56,8 @@
              (apply-change-log {:splitter splitter
                                 :embedder embedder
                                 :vector-store vector-store} change-log))
-           (callback {:type :complete :connector connector})))))
+           (callback {:type :complete :connector connector})))
+       {:last-change (load-last-change connector)}))
     this)
 
   (search [_ text metadata]
@@ -51,7 +67,7 @@
   (stop [this]
     (log/debug "Stopping Sync")
     (doseq [connector connectors]
-      (connector/close connector))
+      (save-last-change connector (connector/close connector)))
     this))
 
 (defn make-collection [{:keys [id] :as opts}]

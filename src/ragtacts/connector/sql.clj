@@ -17,7 +17,7 @@
 
 (defrecord SqlConnector [jdbc-url table-name batch-size interval !job pool]
   Connector
-  (connect [_ callback]
+  (connect [_ callback opts]
     (let [last-id (atom 0)]
       (reset! !job
               (at/interspaced
@@ -40,9 +40,7 @@
                pool))))
   (close [_]
     (log/debug "Stop SqlConnector" jdbc-url)
-    (when @!job
-      (at/stop @!job)
-      (at/stop-and-reset-pool! pool)))
+    (at/stop-and-reset-pool! pool))
 
   (closed? [_]
     (not (:scheduled? (:val @!job)))))
@@ -65,7 +63,8 @@
 
   (connect make-sql-c
            (fn [result]
-             (log/info "result" result)))
+             (log/info "result" result))
+           {})
 
   (close make-sql-c)
 

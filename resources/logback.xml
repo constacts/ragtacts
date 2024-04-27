@@ -33,7 +33,7 @@
     <logger name="io.undertow" level="warn" />
     <logger name="io.grpc.netty" level="warn" />
     
-    <root level="INFO">
+    <root level="DEBUG">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="FILE" />
     </root>

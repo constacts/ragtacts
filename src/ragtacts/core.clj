@@ -103,15 +103,17 @@
 (defn- wait [{:keys [connectors]}]
   (let [latches (into {} (map (fn [connector]
                                 [connector (promise)])
-                              connectors))]
+                              connectors))
+        pool (at/mk-pool)]
     (at/interspaced 1000
                     (fn []
                       (doseq [connector connectors]
                         (when (connector/closed? connector)
                           (deliver (get latches connector) :complete))))
-                    (at/mk-pool))
+                    pool)
     (doseq [latch (vals latches)]
-      @latch)))
+      @latch)
+    (at/stop-and-reset-pool! pool)))
 
 (def cli-options
   [["-m" "--mode [query|chat|server]" "Run in chat or server mode"
@@ -156,7 +158,11 @@
                        wait)
                    (shutdown-agents))
         set-shutdown-hook (fn []
-                            (.addShutdownHook (Runtime/getRuntime) (Thread. stop-app)))]
+
+                            (.addShutdownHook (Runtime/getRuntime) (Thread.
+                                                                    #(do
+                                                                       (log/error "Run hook")
+                                                                       (stop-app)))))]
     (case mode
       "chat" (let [latch (promise)]
                (set-shutdown-hook)
@@ -169,9 +175,8 @@
                  (flush)
                  (let [prompt (str/trim (read-line))]
                    (when-not (= prompt "")
-                     (println "\u001B[34mAI:" (:text (app/chat app prompt)) "\u001B[0m")
-                     (recur))))
-               (println "\u001B[34mAI: Bye~!\u001B[0m"))
+                     (println "\u001B[34mAI:" (:text (app/chat app prompt)) "\u001B[0m"))
+                   (recur))))
       "server" (let [server (server/start app {})]
                  (.addShutdownHook (Runtime/getRuntime) (Thread. #(do
                                                                     (server/stop server)
@@ -180,8 +185,7 @@
                 (collection/sync collection (fn [_] (deliver latch :complete)))
                 (println @latch)
                 (println "\u001B[34mAI:" (:text (app/chat app prompt)) "\u001B[0m")
-                (collection/stop collection)
-                (shutdown-agents))
+                (stop-app))
       (println usage))))
 
 (comment

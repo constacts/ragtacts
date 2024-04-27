@@ -16,8 +16,8 @@
            :else {:data-type :var-char
                   :max-length 65535})))
 
-(defn- create-collection [client collection-name vectors]
-  (let [metadata (:metadata (first vectors))
+(defn- create-collection [client collection-name embeddings]
+  (let [metadata (:metadata (first embeddings))
         metadata-fields (map make-field metadata)]
     (milvus/create-collection client {:collection-name collection-name
                                       :field-types (concat [{:primary-key? true
@@ -29,7 +29,7 @@
                                                              :name "id"}
                                                             {:data-type :float-vector
                                                              :name "vector"
-                                                             :dimension (count (:vectors (first vectors)))}
+                                                             :dimension (count (:vectors (first embeddings)))}
                                                             {:data-type :var-char
                                                              :max-length 65535
                                                              :name "text"}]
@@ -48,28 +48,28 @@
   (milvus/delete client {:collection-name collection-name
                          :expr (str "id == \"" doc-id "\"")}))
 
-(defn- insert-all [client collection-name vectors]
-  (let [metadata (:metadata (first vectors))]
+(defn- insert-all [client collection-name embeddings]
+  (let [metadata (:metadata (first embeddings))]
     (milvus/insert client {:collection-name collection-name
-                           :fields (concat [{:name "id" :values (map :doc-id vectors)}
-                                            {:name "text" :values (map :text vectors)}
-                                            {:name "vector" :values (map :vectors vectors)}]
+                           :fields (concat [{:name "id" :values (map :doc-id embeddings)}
+                                            {:name "text" :values (map :text embeddings)}
+                                            {:name "vector" :values (map :vectors embeddings)}]
                                            (map (fn [[key value]]
                                                   {:name (name key)
-                                                   :values (repeat (count vectors) value)})
+                                                   :values (repeat (count embeddings) value)})
                                                 metadata))})))
 
 
 (defrecord MilvusVectorStore [collection host port db]
   VectorStore
-  (insert [_ vectors]
+  (insert [_ embeddings]
     (with-open [client (milvus/client {:host (or host "localhost")
                                        :port (or port 19530)
                                        :database db})]
       (try
-        (create-collection client collection vectors)
+        (create-collection client collection embeddings)
         (create-index client collection)
-        (insert-all client collection vectors)
+        (insert-all client collection embeddings)
         (catch Exception e
           (.printStackTrace e)))))
 
@@ -79,13 +79,13 @@
                                        :database db})]
       (delete-all-by-doc-id client collection id)))
 
-  (search [_ vectors expr]
+  (search [_ embeddings expr]
     (with-open [client (milvus/client {:host (or host "localhost")
                                        :port (or port 19530)
                                        :database db})]
       (let [results (milvus/search client {:collection-name collection
                                            :metric-type :l2
-                                           :vectors (map #(map float (:vectors %)) vectors)
+                                           :vectors (map #(map float (:vectors %)) embeddings)
                                            :expr expr
                                            :vector-field-name "vector"
                                            :out-fields ["text" "vector"]

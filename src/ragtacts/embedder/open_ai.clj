@@ -1,6 +1,5 @@
 (ns ragtacts.embedder.open-ai
-  (:require [ragtacts.embedder.base :refer [Embedder]]
-            [ragtacts.vector-store.base :refer [make-vectors]]
+  (:require [ragtacts.embedder.base :refer [Embedder make-embedding]]
             [wkok.openai-clojure.api :as openai]))
 
 (defrecord OpenAIEmbedder [model]
@@ -11,10 +10,10 @@
             {:keys [data]} (openai/create-embedding {:model model
                                                      :input texts})]
         (mapv (fn [{:keys [embedding]} {:keys [doc-id metadata text]}]
-                (make-vectors doc-id
-                              text
-                              (map float embedding)
-                              metadata))
+                (make-embedding doc-id
+                                text
+                                (map float embedding)
+                                metadata))
               data
               chunks))
       (catch Exception e

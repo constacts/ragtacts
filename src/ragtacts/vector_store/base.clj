@@ -1,18 +1,6 @@
-(ns ragtacts.vector-store.base
-  (:require [clj-commons.humanize :as h]))
-
-(defrecord Vectors [doc-id text vectors metadata])
-
-(defn make-vectors
-  ([vectors]
-   (make-vectors nil nil vectors nil))
-  ([doc-id text vectors metadata]
-   (->Vectors doc-id text vectors metadata)))
-
-(defmethod print-method Vectors [vectors ^java.io.Writer w]
-  (.write w (str (into {} (update vectors :text #(h/truncate % 30))))))
+(ns ragtacts.vector-store.base)
 
 (defprotocol VectorStore
-  (insert [this vectors])
+  (insert [this embeddings])
   (delete-by-id [this id])
-  (search [this vectors opts]))
+  (search [this embeddings opts]))

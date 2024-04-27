@@ -13,9 +13,11 @@
 (defn- html? [headers]
   (str/starts-with? (get headers "content-type") "text/html"))
 
-(defrecord WebPageConnector [url interval pool !handler last-change]
+(defrecord WebPageConnector [url interval pool !handler !last-change]
   Connector
-  (connect [_ callback]
+  (connect [_ callback opts]
+    (when (:last-change opts)
+      (reset! !last-change (:last-change opts)))
     (reset! !handler
             (at/interspaced
              interval
@@ -24,8 +26,8 @@
                (let [client (http/build-http-client {:connect-timeout 10000
                                                      :redirect-policy :always})
                      request-headers (cond-> {}
-                                       (:last-modified @last-change) (assoc "if-modified-since" (:last-modified @last-change))
-                                       (:etag @last-change) (assoc "if-none-match" (:etag @last-change)))
+                                       (:last-modified @!last-change) (assoc "if-modified-since" (:last-modified @!last-change))
+                                       (:etag @!last-change) (assoc "if-none-match" (:etag @!last-change)))
                      {:keys [status headers body]} (http/get url {:http-client client
                                                                   :headers request-headers})
                      last-modified (get headers "last-modified")
@@ -34,7 +36,7 @@
                                          200 (let [loader (cond
                                                             (html? headers) (make-html-loader {})
                                                             :else (make-text-loader {}))]
-                                               (swap! last-change assoc :last-modified last-modified :etag etag)
+                                               (swap! !last-change assoc :last-modified last-modified :etag etag)
                                                (make-change-log-result [(make-change-log
                                                                          {:type :create
                                                                           :doc (load-doc loader url body)})]))
@@ -46,10 +48,9 @@
              pool)))
 
   (close [_]
-    (log/debug "Stop WebPageConnector" url)
-    (when @!handler
-      (at/stop @!handler)
-      (at/stop-and-reset-pool! pool)))
+    (log/debug "Stopping WebPageConnector" url)
+    (at/stop-and-reset-pool! pool)
+    @!last-change)
 
   (closed? [_]
     (not (:scheduled? (:val @!handler)))))
@@ -58,6 +59,6 @@
   (map->WebPageConnector (merge opts {:!handler (atom nil)
                                       :pool (at/mk-pool)
                                       :interval (* 1000 10)
-                                      :last-change (atom
-                                                    {:last-modified nil
-                                                     :etag nil})})))
+                                      :!last-change (atom
+                                                     {:last-modified nil
+                                                      :etag nil})})))

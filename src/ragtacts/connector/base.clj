@@ -20,6 +20,6 @@
   (make-change-log-result [] nil))
 
 (defprotocol Connector
-  (connect [this callback])
+  (connect [this callback opts])
   (close [this])
   (closed? [this]))

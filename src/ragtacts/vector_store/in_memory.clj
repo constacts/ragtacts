@@ -1,6 +1,7 @@
 (ns ragtacts.vector-store.in-memory
   (:require [ragtacts.splitter.base :refer [make-chunk]]
-            [ragtacts.vector-store.base :refer [insert make-vectors search delete-by-id
+            [ragtacts.embedder.base :refer [make-embedding]]
+            [ragtacts.vector-store.base :refer [insert search delete-by-id
                                                 VectorStore]]
             [clojure.walk :refer [stringify-keys keywordize-keys]])
   (:import [dev.langchain4j.data.document Metadata]
@@ -12,9 +13,9 @@
 
 (def ^:private db-file "db.json")
 
-(defn- vectors->text-segment [{:keys [doc-id
-                                      text
-                                      metadata]}]
+(defn- embedding->text-segment [{:keys [doc-id
+                                        text
+                                        metadata]}]
   (let [metadata (if doc-id
                    (assoc metadata :id doc-id)
                    metadata)]
@@ -35,12 +36,12 @@
 
 (defrecord InMemoryVectorStore [store]
   VectorStore
-  (insert [_ vectors]
+  (insert [_ embeddings]
     (.addAll store
              (map (fn [{:keys [vectors]}]
                     (Embedding. (float-array (map float vectors))))
-                  vectors)
-             (map vectors->text-segment vectors))
+                  embeddings)
+             (map embedding->text-segment embeddings))
     (.serializeToFile store db-file))
 
   (delete-by-id [_ id]
@@ -51,8 +52,8 @@
             (.remove entries entry))))
       (.serializeToFile store db-file)))
 
-  (search [_ vectors {:keys [top-k expr]}]
-    (let [embedding (Embedding. (float-array (map float (:vectors (first vectors)))))
+  (search [_ embeddings {:keys [top-k expr]}]
+    (let [embedding (Embedding. (float-array (map float (:vectors (first embeddings)))))
           result (.search store
                           (EmbeddingSearchRequest.
                            embedding
@@ -70,11 +71,11 @@
 
   (let [s (make-in-memory-vector-store nil)]
     #_(insert s
-              [(make-vectors "1" "hello" [1 2 3] {:a 1})
-               (make-vectors "2" "world" [4 5 6] {:a 1})
-               (make-vectors "3" "foo" [7 8 9] {:a 1})
-               (make-vectors "4" "bar" [10 11 12] {:a 1})])
-    #_(search s [(make-vectors [100 200 300])] {})
+              [(make-embedding "1" "hello" [1 2 3] {:a 1})
+               (make-embedding "2" "world" [4 5 6] {:a 1})
+               (make-embedding "3" "foo" [7 8 9] {:a 1})
+               (make-embedding "4" "bar" [10 11 12] {:a 1})])
+    #_(search s [(make-embedding [100 200 300])] {})
     (delete-by-id s "4"))
   ;; 
   )
