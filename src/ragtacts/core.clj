@@ -5,8 +5,8 @@
             [ragtacts.collection :as collection :refer [make-collection]]
             [ragtacts.connector.folder :refer [make-folder-connector]]
             [ragtacts.connector.web-page :refer [make-web-page-connector]]
-            [ragtacts.embedder.open-ai :refer [make-open-ai-embedder]]
-            [ragtacts.llm.open-ai :refer [make-open-ai-llm]]
+            [ragtacts.embedder.all-mini-lm-l6-v2 :refer [make-all-mini-lm-l6-v2-embedder]]
+            [ragtacts.llm.llama-cpp :refer [make-llama-cpp-llm]]
             [ragtacts.memory.window :refer [make-window-chat-memory]]
             [ragtacts.prompt-template.default :refer [make-default-prompt-template]]
             [ragtacts.splitter.recursive :refer [make-recursive]]
@@ -16,7 +16,7 @@
   (make-recursive {:size 1000 :overlap 20}))
 
 (defn default-embedder []
-  (make-open-ai-embedder {:model "text-embedding-3-small"}))
+  (make-all-mini-lm-l6-v2-embedder {}))
 
 (defn default-vector-store []
   (make-in-memory-vector-store nil))
@@ -28,7 +28,8 @@
   (make-default-prompt-template nil))
 
 (defn default-llm []
-  (make-open-ai-llm {:model "gpt-3.5-turbo-0125"}))
+  (make-llama-cpp-llm {:model "models/Meta-Llama-3-8B-Instruct.Q4_K_M.gguf"
+                       :n-ctx 8192}))
 
 (defn- http? [data-sources]
   (some? (or (re-find #"^https://" data-sources)

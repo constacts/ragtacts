@@ -12,7 +12,9 @@
             [ragtacts.connector.sql :refer [make-sql-connector]]
             [ragtacts.connector.web-page :refer [make-web-page-connector]]
             [ragtacts.core :as core]
+            [ragtacts.embedder.all-mini-lm-l6-v2 :refer [make-all-mini-lm-l6-v2-embedder]]
             [ragtacts.embedder.open-ai :refer [make-open-ai-embedder]]
+            [ragtacts.llm.llama-cpp :refer [make-llama-cpp-llm]]
             [ragtacts.llm.open-ai :refer [make-open-ai-llm]]
             [ragtacts.logging :as log]
             [ragtacts.memory.window :refer [make-window-chat-memory]]
@@ -56,7 +58,8 @@
    {:recursive {:cons-fn make-recursive}}
 
    :embedder
-   {:open-ai {:cons-fn make-open-ai-embedder}}
+   {:open-ai {:cons-fn make-open-ai-embedder}
+    :all-mini-lm-l6-v2 {:cons-fn make-all-mini-lm-l6-v2-embedder}}
 
    :vector-store
    {:in-memory {:cons-fn make-in-memory-vector-store}
@@ -69,7 +72,8 @@
    {:default {:cons-fn make-default-prompt-template}}
 
    :llm
-   {:open-ai {:cons-fn make-open-ai-llm}}})
+   {:open-ai {:cons-fn make-open-ai-llm}
+    :llama-cpp {:cons-fn make-llama-cpp-llm}}})
 
 (defn- eval-config [config]
   (into {}

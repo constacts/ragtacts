@@ -4,8 +4,8 @@
            :overlap 20}}
 
  :embedder
- {:type :open-ai
-  :params {:model "text-embedding-3-small"}}
+ {:type :all-mini-lm-l6-v2
+  :params {}}
 
  :vector-store
  {:type :in-memory
@@ -20,5 +20,6 @@
   :params {}}
 
  :llm
- {:type :open-ai
-  :params {:model "gpt-3.5-turbo-0125"}}}
+ {:type :llama-cpp
+  :params {:model "models/Meta-Llama-3-8B-Instruct.Q4_K_M.gguf"
+           :n-ctx 8192}}}

@@ -24,8 +24,8 @@
     (let [chunks (collection/search collection prompt nil)
           _ (binding [*print-length* 5]
               (log/debug (str "Search result chunks count:" (count chunks)) chunks))
-          _ (memory/add-chat memory (make-chat-msg {:type :user :text prompt}))
           chat-history (memory/get-chat-history memory)
+          _ (memory/add-chat memory (make-chat-msg {:type :user :text prompt}))
           system-prompt (prompt-template/prompt prompt-template {:context (->> chunks
                                                                                (map :text)
                                                                                (str/join "\n"))})
