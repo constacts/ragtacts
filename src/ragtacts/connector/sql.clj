@@ -53,21 +53,66 @@
                             opts)))
 
 (comment
-  (seq [])
+  ;; In order to utilize the SQL connector, it's essential to have a table designated for the connector.
+  ;; These tables can be created either through triggers and Functions
+  ;; They should include the following columns:
+  ;; -----------------------------------------------
+  ;; |   id           | serial          |         -
+  ;; |   entity_id    | int             | To reflect changes in the articles table, this is the ID of the table, for example.
+  ;; |   operation    | varchar (6)     | To store the operation type (I, U, D)
+  ;; |   content      | text            | To store the content of the article's changes
+  ;; |   created_at   | timestampz      |         -
+  ;; -----------------------------------------------
+
+  ;; *** Function example:
+
+  ;; -- CREATE OR REPLACE FUNCTION log_article_changes ()
+  ;; -- RETURNS TRIGGER AS $$
+  ;; -- BEGIN
+  ;; --     -- Check the type of operation (INSERT, UPDATE, DELETE)
+  ;; --     IF TG_OP = 'INSERT' THEN
+  ;; --         INSERT INTO test2 (article_id, action)
+  ;; --         VALUES (NEW.id, 'I');
+  ;; --     ELSIF TG_OP = 'UPDATE' THEN
+  ;; --         INSERT INTO test2 (article_id, action)
+  ;; --         VALUES (NEW.id, 'U');
+  ;; --     ELSIF TG_OP = 'DELETE' THEN
+  ;; --         INSERT INTO test2 (article_id, action)
+  ;; --         VALUES (OLD.id, 'D');
+  ;; --     END IF;
+  ;; --     RETURN NULL; -- This is required for AFTER triggers
+  ;; -- END;
+  ;; -- $$ LANGUAGE plpgsql;
+
+
+  ;; *** Trigger example:
+
+  ;; -- CREATE TRIGGER articles_change_trigger
+  ;; -- AFTER INSERT OR UPDATE OR DELETE ON articles
+  ;; -- FOR EACH ROW
+  ;; -- EXECUTE FUNCTION log_article_changes ();
+
+
+  ;; *** Write the options as shown below:
+  ;; --------------------------------------------------------
+  ;; | :jdbc-url            | Your JDBC URL. eg: jdbc:postgresql://localhost/{db_name}?user={user}&password={password}"
+  ;; | :table-name          | Table name to put in RAG. eg: rgtcs_{table-name}_change_logs
+  ;; | :check-for-changes   | Check for table's changes.
+  ;; | :changed-values-size | Number of rows to fetch at one time.
+  ;; --------------------------------------------------------
+
   (require '[ragtacts.connector.base :refer [connect close]])
-  ;; => nil
-  (def make-sql-c (make-sql-connector {:jdbc-url "jdbc:postgresql://localhost/other_test_db?user=otheradmin&password=otheradmin"
-                                       :table-name "rgtcs_articles_change_logs"
-                                       :interval 3000
-                                       :batch-size 1}))
+
+  (def options {:jdbc-url "jdbc:postgresql://localhost/your_test_db?user=ragtacts&password=ragtacts"
+                :table-name "rgtcs_artcles_change_logs"
+                :interval 3000
+                :batch-size 1})
+
+  (def make-sql-c (make-sql-connector options))
 
   (connect make-sql-c
            (fn [result]
              (log/info "result" result))
            {})
 
-  (close make-sql-c)
-
- ;; todo : db에서 entity-id 로 적용, content도 넣어두자
- ;; 요 페이지 안에 trigger, table 설명서를 넣어두자.
-  )
+  (close make-sql-c))
