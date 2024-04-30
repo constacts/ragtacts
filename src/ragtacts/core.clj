@@ -28,7 +28,9 @@
   (make-default-prompt-template nil))
 
 (defn default-llm []
-  (make-llama-cpp-llm {:model "models/Meta-Llama-3-8B-Instruct.Q4_K_M.gguf"
+  (make-llama-cpp-llm {:model {:type :hugging-face
+                               :name "QuantFactory/Meta-Llama-3-8B-Instruct-GGUF"
+                               :file "Meta-Llama-3-8B-Instruct.Q4_K_M.gguf"}
                        :n-ctx 8192}))
 
 (defn- http? [data-sources]

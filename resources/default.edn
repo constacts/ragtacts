@@ -21,5 +21,7 @@
 
  :llm
  {:type :llama-cpp
-  :params {:model "models/Meta-Llama-3-8B-Instruct.Q4_K_M.gguf"
+  :params {:model {:type :hugging-face
+                   :name "QuantFactory/Meta-Llama-3-8B-Instruct-GGUF"
+                   :file "Meta-Llama-3-8B-Instruct.Q4_K_M.gguf"}
            :n-ctx 8192}}}

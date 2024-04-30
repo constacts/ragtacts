@@ -19,7 +19,8 @@
         com.nextjournal/beholder {:mvn/version "1.0.2"}
         luminus/ring-undertow-adapter {:mvn/version "1.3.1"}
         metosin/reitit {:mvn/version "0.7.0-alpha7"}
-        de.kherud/llama {:mvn/version "3.0.1"}}
+        de.kherud/llama {:mvn/version "3.0.1"}
+        me.tongfei/progressbar {:mvn/version "0.10.0"}}
  :aliases
  {:build {:deps {io.github.clojure/tools.build {:mvn/version "0.9.4"}
                  slipset/deps-deploy {:mvn/version "0.2.1"}}
