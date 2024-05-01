@@ -12,9 +12,6 @@ grounding and question-answering capabilities.
 
 ## Getting Started 
 
-ragtacts currently uses the OpenAI API, so you'll need to put the value of the key issued by 
-OpenAI in the `OPENAI_API_KEY` environment variable before running it. The key value starts with `sk-`.
-
 ### As a Library
 
 To use the latest release, add the following to your deps.edn (Clojure CLI)
@@ -85,33 +82,55 @@ A Collection is composed of the following components
 
 The app consists of the following components.
 
-
 * Collection: Semantically searches for chunks similar to prompts.
 * PromptTemplate: Allows you to write pre-stored prompts.
 * Memory: Records conversations and answers based on previous conversations.
 * LLM: Use a language model to answer prompts.
 
-### Supported Components (WIP)
+### Components currently supported
 
 - Connector
-  - FolderConnector:  Watch the folder and get any changes.
-  - HttpConnector: Watch a web resource over HTTP and fetch it back if it has changed.
-  - SqlConnector: Periodically fetch changes to a SQL database table.
+  |                 |                                                                              |
+  |-----------------|------------------------------------------------------------------------------|
+  | FolderConnector | Watch the folder and get any changes.                                        |
+  | HttpConnector   | Watch a web resource over HTTP and fetch it back if it has changed.          |
+  | SqlConnector    | Periodically fetch changes to a SQL database table.                          |
+
 - DocumentLoader
-  - HtmlLoader: Extract text from an Html document.
-  - OfficeDocLoader:  Extract text from documents such as pdf, doc, ppt, xls, etc.
-  - TextLoader: Replace plain text with documents.
+  |                 |                                                                              |
+  |-----------------|------------------------------------------------------------------------------|
+  | HtmlLoader      | Extract text from an Html document.                                          |
+  | OfficeDocLoader | Extract text from documents such as pdf, doc, ppt, xls, etc.                 |
+  | TextLoader      | Replace plain text with documents.                                           |
+
 - Splitter
-  - RecursiveSplitter: Split text without breaking sentences in the middle.
+  |                   |                                                                            |
+  |-------------------|----------------------------------------------------------------------------|
+  | RecursiveSplitter | Split text without breaking sentences in the middle.                       |
+
 - Embedder
-  - OpenAI:  Use OpenAI embedding API.
+  |                   |                                                                            |
+  |-------------------|----------------------------------------------------------------------------|
+  | all-MiniLM-L6-v2  | HuggingFace sentence-transformers/all-MiniLM-L6-v2 embedding model         |
+  | OpenAI            | Use OpenAI embedding API.<br>To use it, you need to set the OPENAI_API_KEY environment variable. |
+  
 - VectorStore
-  - InMemoryVectorStore: In-memory vector database. Reads and saves as a JSON-type file.
-  - Milvus: Uses the Milvus database
+  |                     |                                                                          |
+  |---------------------|--------------------------------------------------------------------------|
+  | InMemoryVectorStore | In-memory vector database. Reads and saves as a JSON-type file.          |
+  | Milvus              | Uses the Milvus database                                                 |
+
 - Memory
-  - WindowChatMemory: If the chat history is over a certain size, it clears the oldest content first.
+  |                  |                                                                             |
+  |------------------|-----------------------------------------------------------------------------|
+  | WindowChatMemory | If the chat history is over a certain size, it clears the oldest content first. |
+ 
 - LLM
-  - OpenAI: Uses the OpenAI API.
+  |          |                                                                                     |
+  |----------|-------------------------------------------------------------------------------------|
+  | LlamaCpp | Infer locally using the llama.cpp model. Support for downloading HuggingFace models |
+  | OpenAI   | Uses the OpenAI API.<br>To use it, you need to set the OPENAI_API_KEY environment variable. |
+
 
 ### Component Configurations
 
@@ -125,8 +144,8 @@ component settings are as follows
            :overlap 20}}
 
  :embedder
- {:type :open-ai
-  :params {:model "text-embedding-3-small"}}
+ {:type :all-mini-lm-l6-v2
+  :params {}}
 
  :vector-store
  {:type :in-memory
@@ -141,8 +160,11 @@ component settings are as follows
   :params {}}
 
  :llm
- {:type :open-ai
-  :params {:model "gpt-3.5-turbo-0125"}}}
+ {:type :llama-cpp
+  :params {:model {:type :hugging-face
+                   :name "QuantFactory/Meta-Llama-3-8B-Instruct-GGUF"
+                   :file "Meta-Llama-3-8B-Instruct.Q4_K_M.gguf"}
+           :n-ctx 8192}}}
 ```
 
 ### Create your own components
@@ -176,12 +198,6 @@ Embedder to create an OpenAIEmbbeder.
 (defn make-open-ai-embedder [{:keys [model]}]
   (->OpenAIEmbedder model))
 ```
-
-
-
-
-
-
 
 ## License
 
