@@ -14,6 +14,8 @@ grounding and question-answering capabilities.
 
 ### As a Library
 
+[![Clojars Project](https://img.shields.io/clojars/v/com.constacts/ragtacts.svg)](https://clojars.org/com.constacts/ragtacts)
+
 To use the latest release, add the following to your deps.edn (Clojure CLI)
 
 ```
