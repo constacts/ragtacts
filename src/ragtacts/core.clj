@@ -30,7 +30,10 @@
 (defn default-llm []
   (make-llama-cpp-llm {:model {:type :hugging-face
                                :name "QuantFactory/Meta-Llama-3-8B-Instruct-GGUF"
-                               :file "Meta-Llama-3-8B-Instruct.Q4_K_M.gguf"}
+                               :file "Meta-Llama-3-8B-Instruct.Q4_K_M.gguf"
+                               :chat-template "{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}"
+                               :bos-token "<|begin_of_text|>"
+                               :eos-token "<|end_of_text|>"}
                        :n-ctx 8192}))
 
 (defn- http? [data-sources]
