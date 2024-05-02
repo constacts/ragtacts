@@ -1,6 +1,7 @@
 (ns ragtacts.core
   (:refer-clojure :exclude [sync chunk])
   (:require [clojure.java.io :as io]
+            [clojure.string :as str]
             [ragtacts.app :as app :refer [make-app]]
             [ragtacts.collection :as collection :refer [make-collection]]
             [ragtacts.connector.folder :refer [make-folder-connector]]
@@ -41,10 +42,11 @@
              (re-find #"^http://" data-sources))))
 
 (defn- path? [data-sources]
-  (try
-    (.exists (io/file data-sources))
-    (catch Exception _
-      false)))
+  (let [path (str/replace data-sources #"~" (System/getProperty "user.home"))]
+    (try
+      (.exists (io/file path))
+      (catch Exception _
+        false))))
 
 (defn- infer-connector [data-sources]
   (cond
@@ -52,7 +54,7 @@
     (path? data-sources) (make-folder-connector {:path data-sources})
     :else (throw (ex-info "Unknown data source" {:data-sources data-sources}))))
 
-(def default-components
+(defn default-components []
   {:splitter (default-splitter)
    :embedder (default-embedder)
    :vector-store (default-vector-store)
@@ -64,9 +66,10 @@
   ([data-sources]
    (app data-sources {}))
   ([data-sources components]
-   (let [components (merge default-components components)
+   (let [defaults (default-components)
+         components (merge defaults components)
          connectors (map infer-connector data-sources)]
-     (make-app (assoc (merge default-components components)
+     (make-app (assoc (merge defaults components)
                       :collection (make-collection (if (seq connectors)
                                                      (assoc components :connectors connectors)
                                                      components)))))))
@@ -78,7 +81,9 @@
   app)
 
 (defn stop [app]
-  (collection/stop (:collection app)))
+  (-> (:collection app)
+      collection/stop)
+  (shutdown-agents))
 
 (def chat app/chat)
 

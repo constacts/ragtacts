@@ -5,10 +5,7 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.cli :refer [parse-opts]]
-            [overtone.at-at :as at]
             [ragtacts.app :as app]
-            [ragtacts.collection :as collection]
-            [ragtacts.connector.base :as connector]
             [ragtacts.connector.sql :refer [make-sql-connector]]
             [ragtacts.connector.web-page :refer [make-web-page-connector]]
             [ragtacts.core :as core]
@@ -88,21 +85,6 @@
                [component-key (fn (:params value))])))
          config)))
 
-(defn- wait [{:keys [connectors]}]
-  (let [latches (into {} (map (fn [connector]
-                                [connector (promise)])
-                              connectors))
-        pool (at/mk-pool)]
-    (at/interspaced 1000
-                    (fn []
-                      (doseq [connector connectors]
-                        (when (connector/closed? connector)
-                          (deliver (get latches connector) :complete))))
-                    pool)
-    (doseq [latch (vals latches)]
-      @latch)
-    (at/stop-and-reset-pool! pool)))
-
 (defn- validate-options [{:keys [mode data-sources prompt]}]
   (case mode
     ("chat" "server") (and (seq data-sources) (nil? prompt))
@@ -117,13 +99,8 @@
                      (edn/read (java.io.PushbackReader. r)))
             _ (log/debug "Config file" config)
             chat-app (core/app data-sources (eval-config config))
-            stop-app (fn []
-                       (-> (:collection chat-app)
-                           collection/stop
-                           wait)
-                       (shutdown-agents))
             set-shutdown-hook (fn []
-                                (.addShutdownHook (Runtime/getRuntime) (Thread. stop-app)))]
+                                (.addShutdownHook (Runtime/getRuntime) (Thread. #(core/stop chat-app))))]
         (case mode
           "chat" (let [latch (promise)]
                    (set-shutdown-hook)
@@ -141,11 +118,11 @@
           "server" (let [server (server/start chat-app {})]
                      (.addShutdownHook (Runtime/getRuntime) (Thread. #(do
                                                                         (server/stop server)
-                                                                        (stop-app)))))
+                                                                        (core/stop chat-app)))))
           "query" (let [latch (promise)]
                     (core/sync chat-app (fn [_ _] (deliver latch :complete)))
                     (log/debug @latch)
                     (println "\u001B[34mAI:" (:text (app/chat chat-app prompt)) "\u001B[0m")
-                    (stop-app))
+                    (core/stop chat-app))
           (println usage)))
       (println usage))))

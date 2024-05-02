@@ -38,8 +38,6 @@
                          :last-modified (.lastModified file)})
                       (file-seq (io/file path)))))
 
-(str/replace "/papers" #"~" (System/getProperty "user.home"))
-
 (defrecord FolderConnector [path !watcher]
   Connector
   (connect [_ callback {:keys [last-change]}]

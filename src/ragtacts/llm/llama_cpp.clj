@@ -63,3 +63,4 @@
                        :chat-template (:chat-template model)
                        :bos-token (:bos-token model)
                        :eos-token (:eos-token model)})))
+

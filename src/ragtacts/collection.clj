@@ -3,6 +3,7 @@
   (:require [clj-ulid :refer [ulid]]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
+            [overtone.at-at :as at]
             [ragtacts.connector.base :as connector]
             [ragtacts.embedder.base :as embedder]
             [ragtacts.logging :as log]
@@ -42,6 +43,21 @@
 (defn- save-last-change [connector last-change]
   (spit (last-change-file-name connector) last-change))
 
+(defn- wait [{:keys [connectors]}]
+  (let [latches (into {} (map (fn [connector]
+                                [connector (promise)])
+                              connectors))
+        pool (at/mk-pool)]
+    (at/interspaced 1000
+                    (fn []
+                      (doseq [connector connectors]
+                        (when (connector/closed? connector)
+                          (deliver (get latches connector) :complete))))
+                    pool)
+    (doseq [latch (vals latches)]
+      @latch)
+    (at/stop-and-reset-pool! pool)))
+
 (defrecord CollectionImpl [id name connectors splitter embedder vector-store]
   Collection
   (sync [this callback]
@@ -56,7 +72,8 @@
              (apply-change-log {:splitter splitter
                                 :embedder embedder
                                 :vector-store vector-store} change-log))
-           (callback {:type :complete :connector connector})))
+           (when (seq change-logs)
+             (callback {:type :complete :connector connector}))))
        {:last-change (load-last-change connector)}))
     this)
 
@@ -68,6 +85,7 @@
     (log/debug "Stopping Sync")
     (doseq [connector connectors]
       (save-last-change connector (connector/close connector)))
+    (wait this)
     this))
 
 (defn make-collection [{:keys [id] :as opts}]

@@ -1,7 +1,7 @@
 (ns ragtacts.vector-store.in-memory
   (:require [ragtacts.splitter.base :refer [make-chunk]]
             [ragtacts.embedder.base :refer [make-embedding]]
-            [ragtacts.vector-store.base :refer [insert search delete-by-id
+            [ragtacts.vector-store.base :refer [delete-by-id
                                                 VectorStore]]
             [clojure.walk :refer [stringify-keys keywordize-keys]])
   (:import [dev.langchain4j.data.document Metadata]

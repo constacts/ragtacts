@@ -21,18 +21,19 @@ com.constacts/ragtacts {:mvn/version "0.1.0"}
 ```
 
 ```clojure
-(require '[ragtacts.core :refer [app sync chat]])
+(ns example.core
+  (:require [ragtacts.core :as rg]))
+
 ;; 1. Initially, you have one document.
 ;; $ ls -1 ~/papers
 ;; Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks.pdf
-
-(-> (app ["https://aws.amazon.com/what-is/retrieval-augmented-generation/"
-          "~/papers"])
-    (sync
-      ;; Callback that is called when a sync event occurs.
-      (fn [app event]
-        (when (= :complete (:type event))
-          (println (chat app "Tell me about RAG technology."))
+(defn -main [& _]
+  (-> ["https://aws.amazon.com/what-is/retrieval-augmented-generation/" "~/papers"]
+      rg/app
+      (rg/sync 
+        ;; Callback that is called when a sync event occurs.
+        (fn [app event]
+          (println (:text (rg/chat app "What is RAG?")))
           ;; 2. If you get an answer and add antoher document to ~/papers,
           ;;    it will sync up and give you a new answer.
           ;; $ ls -1 ~/papers
@@ -159,11 +160,14 @@ component settings are as follows
  {:type :default
   :params {}}
 
- :llm
+  :llm
  {:type :llama-cpp
   :params {:model {:type :hugging-face
                    :name "QuantFactory/Meta-Llama-3-8B-Instruct-GGUF"
-                   :file "Meta-Llama-3-8B-Instruct.Q4_K_M.gguf"}
+                   :file "Meta-Llama-3-8B-Instruct.Q4_K_M.gguf"
+                   :chat-template "{% set loop_messages = messages %}{% for message in loop ...
+                   :bos-token "<|begin_of_text|>"
+                   :eos-token "<|end_of_text|>"}
            :n-ctx 8192}}}
 ```
 
