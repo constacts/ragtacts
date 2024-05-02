@@ -30,7 +30,7 @@
   (search [this text metadata]))
 
 (defn- last-change-file-name [connector]
-  (let [connector-name (str (type connector))]
+  (let [connector-name (.getName (type connector))]
     (str "last-change-" connector-name ".edn")))
 
 (defn- load-last-change [connector]
