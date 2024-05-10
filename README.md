@@ -90,50 +90,58 @@ The app consists of the following components.
 * Memory: Records conversations and answers based on previous conversations.
 * LLM: Use a language model to answer prompts.
 
+Ragtacts supports agents. There are examples in the `ragtacts.agent.base` namespace. 
+Currently, only the OpenAI model is available; the llama3 model is in the process of being created.
+
 ### Components currently supported
 
 - Connector
-  |                 |                                                                              |
+  | Name            | Description                                                                  |
   |-----------------|------------------------------------------------------------------------------|
   | FolderConnector | Watch the folder and get any changes.                                        |
   | HttpConnector   | Watch a web resource over HTTP and fetch it back if it has changed.          |
   | SqlConnector    | Periodically fetch changes to a SQL database table.                          |
 
 - DocumentLoader
-  |                 |                                                                              |
+  | Name            | Description                                                                  |
   |-----------------|------------------------------------------------------------------------------|
   | HtmlLoader      | Extract text from an Html document.                                          |
   | OfficeDocLoader | Extract text from documents such as pdf, doc, ppt, xls, etc.                 |
   | TextLoader      | Replace plain text with documents.                                           |
 
 - Splitter
-  |                   |                                                                            |
+  | Name              | Description                                                                |
   |-------------------|----------------------------------------------------------------------------|
   | RecursiveSplitter | Split text without breaking sentences in the middle.                       |
 
 - Embedder
-  |                   |                                                                            |
+  | Name              | Description                                                                |
   |-------------------|----------------------------------------------------------------------------|
   | all-MiniLM-L6-v2  | HuggingFace sentence-transformers/all-MiniLM-L6-v2 embedding model         |
   | OpenAI            | Use OpenAI embedding API.<br>To use it, you need to set the OPENAI_API_KEY environment variable. |
   
 - VectorStore
-  |                     |                                                                          |
+  | Name                | Description                                                              |
   |---------------------|--------------------------------------------------------------------------|
   | InMemoryVectorStore | In-memory vector database. Reads and saves as a JSON-type file.          |
   | Milvus              | Uses the Milvus database                                                 |
 
 - Memory
-  |                  |                                                                             |
+  | Name             | Description                                                                 |
   |------------------|-----------------------------------------------------------------------------|
   | WindowChatMemory | If the chat history is over a certain size, it clears the oldest content first. |
  
 - LLM
-  |          |                                                                                     |
+  | Name     | Description                                                                         |
   |----------|-------------------------------------------------------------------------------------|
   | LlamaCpp | Infer locally using the llama.cpp model. Support for downloading HuggingFace models |
   | OpenAI   | Uses the OpenAI API.<br>To use it, you need to set the OPENAI_API_KEY environment variable. |
 
+- Tool
+  | Name         | Description                                                                     |
+  |--------------|---------------------------------------------------------------------------------|
+  | TavilySearch | [Tavily's Search API](https://tavily.com/) is a search engine built specifically for AI agents |
+  | Collection   | You can use Collection as a tool.                                               |
 
 ### Component Configurations
 
