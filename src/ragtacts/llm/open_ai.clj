@@ -32,10 +32,11 @@
   (query [_ {:keys [chat-msgs tools]}]
     (let [params {:model model
                   :messages (map ->message chat-msgs)}
+          params (if tools
+                   (assoc params :tools (map tool->fn tools))
+                   params)
           response (openai/create-chat-completion
-                    (if tools
-                      (assoc params :tools (map tool->fn tools))
-                      params)
+                    params
                     {:trace (fn [request response]
                               ;; (println "Request:")
                               ;; (println (:body request))

@@ -52,7 +52,8 @@
 
 (defn- tools->msgs [tools]
   (when tools
-    [{:type :fn-metadata :text (json/generate-string metadata-for-setup)}
+    [;; {:type :system :text "If the role is function_call, it should contain only one JSON object, and it should be valid JSON - this is really important."}
+     {:type :fn-metadata :text (json/generate-string metadata-for-setup)}
      {:type :user :text "What is the current weather in London?"}
      {:type :tool-calls
       :tool-calls [{:name "get_current_weather"
@@ -63,6 +64,21 @@
      {:type :ai :text "The current weather in London is Cloudy with a temperature of 15 Celsius"}
      {:type :fn-metadata
       :text (str "[" (str/join ", " (map ->fn-call tools)) "]")}]))
+
+(first (first (re-seq #".*(\[.*?\]).*"
+                      "[{name \":\" langsmith_search \",\" arguments \":{\" query \":\" how can langsmith help with testing \"}}]\n\n{----------------")))
+
+(defn- parse-fn-calls-ouput [result]
+  (let [root-array (->> result
+                        (re-seq #".*(\[.*?\]).*")
+                        first
+                        first)]
+    (println root-array)
+    (try
+      (json/parse-string root-array true)
+      (catch Exception e
+        (.printStackTrace e)
+        nil))))
 
 (defrecord LlamaCppLlm [model chat-template bos-token eos-token]
   Llm
@@ -80,10 +96,9 @@
                          (.setMiroStat MiroStat/V2)
                          (.setStopStrings (into-array String [eos-token])))
           result (.complete model infer-params)
-          fn-call (try
-                    (json/parse-string result true)
-                    (catch Exception _
-                      nil))]
+          _ (println "result:" result)
+          fn-call (parse-fn-calls-ouput result)
+          _ (println "fn-call:" fn-call)]
       (make-answer {:text (when-not fn-call
                             result)
                     :tool-calls (when fn-call

@@ -17,6 +17,7 @@
           (:results (json/parse-string body true))
           (throw (ex-info "API request failed" {:status status :body body}))))
       (throw (ex-info "API key not found" {}))))
+
   (metadata [_]
     {:name "tavily_search_results_json"
      :description "A search engine optimized for comprehensive, accurate, and trusted results.\n
