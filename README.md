@@ -19,7 +19,7 @@ grounding and question-answering capabilities.
 To use the latest release, add the following to your deps.edn (Clojure CLI)
 
 ```
-com.constacts/ragtacts {:mvn/version "0.1.0"}
+com.constacts/ragtacts {:mvn/version "0.2.0"}
 ```
 
 ```clojure
