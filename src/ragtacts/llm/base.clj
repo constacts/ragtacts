@@ -1,9 +1,9 @@
 (ns ragtacts.llm.base)
 
-(defrecord Answer [text])
+(defrecord Answer [text tool-calls])
 
-(defn make-answer [text]
-  (->Answer text))
+(defn make-answer [params]
+  (map->Answer params))
 
 (defprotocol Llm
-  (query [this prompt]))
+  (query [this args]))
