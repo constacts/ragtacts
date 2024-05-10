@@ -73,7 +73,6 @@
                         (re-seq #".*(\[.*?\]).*")
                         first
                         first)]
-    (println root-array)
     (try
       (json/parse-string root-array true)
       (catch Exception e
@@ -96,9 +95,7 @@
                          (.setMiroStat MiroStat/V2)
                          (.setStopStrings (into-array String [eos-token])))
           result (.complete model infer-params)
-          _ (println "result:" result)
-          fn-call (parse-fn-calls-ouput result)
-          _ (println "fn-call:" fn-call)]
+          fn-call (parse-fn-calls-ouput result)]
       (make-answer {:text (when-not fn-call
                             result)
                     :tool-calls (when fn-call
