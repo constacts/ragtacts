@@ -28,6 +28,10 @@
   (fn [q & {:keys [type]}] type))
 
 (defmethod ask :default
-  ([q] (ask q {:type :open-ai}))
-  ([_ {:keys [type]}]
-   (throw (ex-info (str type " is unknown llm type") {:type type}))))
+  ([q]
+   (ask q {:type :open-ai}))
+  ([q {:keys [type] :as params}]
+   (ask q (if type
+            params
+            (assoc params :type :open-ai)))))
+   

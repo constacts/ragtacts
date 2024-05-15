@@ -2,19 +2,30 @@
   (:require [ragtacts.new.core :refer [ask vector-store save search prompt embed]]
             [ragtacts.new.vector-store.milvus :refer [milvus]]
             [ragtacts.new.loader.web :refer [web-text]]
+            [ragtacts.new.loader.doc :refer [doc-text]]
             [ragtacts.new.embedding.open-ai :refer [open-ai-embedding]]
             [clojure.string :as str]))
 
+
+(defn ^{:desc "ragtacts 해시 값을 구하는 함수입니다."}
+  ragtacts-hash
+  [^{:type "string"
+     :desc "해시 값을 구할 단어입니다."}
+   word]
+  (reverse word))
+
+(defn ^{:desc "ragtact 카운터 함수입니다."}
+  word-count
+  [^{:type "string"
+     :desc "단어입니다."}
+   word]
+  (count word))
+
 (comment
 
-  (let [question "What is RAG?"
-        db (vector-store {:db (milvus {:collection "test6"})})]
-    (save db [(web-text "https://aws.amazon.com/what-is/retrieval-augmented-generation/")])
-    (ask (prompt "You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use three sentences maximum and keep the answer concise.
-Question: {{ question }}
-Context: {{ context }} 
-Answer:"
-                 {:question question
-                  :context (str/join "\n" (search db question))})))
+  (apply #'ragtacts-hash ["대한민국"])
+
+  (ask "스페인의 수도는?")
+
   ;;
   )
