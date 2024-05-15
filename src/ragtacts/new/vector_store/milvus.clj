@@ -2,7 +2,8 @@
   (:require  [cheshire.core :as json]
              [milvus-clj.core :as milvus]
              [ragtacts.new.embedding.base :refer [embed text->doc]]
-             [ragtacts.new.vector-store.base :refer [save search]]))
+             [ragtacts.new.vector-store.base :refer [save search]]
+             [ragtacts.new.splitter.base :refer [split]]))
 
 (defn- make-field [[key value]]
   (merge {:name (name key)}
@@ -62,15 +63,16 @@
             :port (or port 19530)
             :database (or db "default")}})
 
-(defmethod save :milvus [{:keys [embedding db]} texts-or-docs]
+(defmethod save :milvus [{:keys [embedding splitter db]} texts-or-docs]
   (let [docs (map text->doc texts-or-docs)
-        embeddings (embed embedding (map :text docs))
+        chunked-docs (split splitter docs)
+        embeddings (embed embedding (map :text chunked-docs))
         collection (-> db :collection)]
     (with-open [client (milvus/client (:params db))]
       (try
-        (create-collection client collection docs embeddings)
+        (create-collection client collection chunked-docs embeddings)
         (create-index client collection)
-        (insert-all client collection docs (map #(map float %) embeddings))
+        (insert-all client collection chunked-docs (map #(map float %) embeddings))
         (catch Exception e
           (.printStackTrace e))))))
 
@@ -92,3 +94,4 @@
               first
               (map :entity)
               (map #(get % "text"))))))))
+
