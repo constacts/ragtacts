@@ -3,10 +3,12 @@
             [ragtacts.new.llm.base :refer [ask]]
             [wkok.openai-clojure.api :as openai]))
 
+
 (defn- question->msgs [q]
-  (if (string? q)
-    [{:user q}]
-    q))
+  (cond
+    (string? q) [{:user q}]
+    (vector? q) (map #(if (string? %) {:user %} %) q)
+    :else (throw (ex-info (str q "is unknown question type") {:q q}))))
 
 (defn- ->open-ai-message [{:keys [system user ai tool-calls tool tool-call-id] :as msg}]
   (cond system {:role "system" :content system}
@@ -41,7 +43,7 @@
 
 (defn- chat-completion [{:keys [model msgs tools]}]
   (let [params {:model (or model "gpt-4o")
-                :messages (mapv ->open-ai-message msgs)}]
+                :messages (map ->open-ai-message msgs)}]
     (-> (openai/create-chat-completion (if (seq tools)
                                          (assoc params :tools (map tool->function tools))
                                          params)
@@ -68,18 +70,20 @@
                                           #(json/parse-string % true))
             tool (select-tool-by-name tools function)]
         (when tool
-          (conj msgs {:ai (:content
-                           (chat-completion
-                            {:model model
-                             :msgs (concat msgs
-                                           [{:tool-calls (-> result :tool_calls)}
-                                            {:tool (json/generate-string (apply-fn tool function))
-                                             :tool-call-id (-> result :tool_calls first :id)}]
-                                           [(last msgs)])
-                             :tools tools}))})))
-      (conj msgs {:ai (:content result)}))))
+          (conj (vec msgs)
+                {:ai (:content
+                      (chat-completion
+                       {:model model
+                        :msgs (concat msgs
+                                      [{:tool-calls (-> result :tool_calls)}
+                                       {:tool (json/generate-string (apply-fn tool function))
+                                        :tool-call-id (-> result :tool_calls first :id)}]
+                                      [(last msgs)])
+                        :tools tools}))})))
+      (conj (vec msgs) {:ai (:content result)}))))
 
 (comment
 
   ;;
   )
+

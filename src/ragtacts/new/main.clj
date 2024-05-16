@@ -23,8 +23,11 @@
 
   (apply #'ragtacts-hash ["대한민국"])
 
-  (last (ask (conj (ask "수박과 바나나 중 더 맞있는 것은?")
-                   {:user "그럼 더 긴 단어는?"})))
+  (-> (ask "수박과 바나나 중 더 맞있는 것은?")
+      (conj "그럼 더 긴 단어는?")
+      ask
+      last)
+
 
   (ask "\"대한민국\"이라는 단어의 ragtacts 해시 값을 구해주세요." {:tools [#'ragtacts-hash #'word-count]})
 
