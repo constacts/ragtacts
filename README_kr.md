@@ -26,10 +26,11 @@
 (ask "Hello!" {:model "gpt-4-turbo"})
 ```
 
-`prompt` 함수로 질문 템플릿을 만들어 쓸 수 있습니다. 템플릿은 Jinja 템플릿 문법을 씁니다.
+`prompt` 함수로 질문 템플릿을 만들어 쓸 수 있습니다. 템플릿은 Python `str.format` 템플릿 문법을 씁니다.
 
 ```clojure
 (ask 
-  (prompt "Context: {{ }}\nQuestion: {{ }}" 
+  (prompt "Context: { }\nQuestion: { }" 
      {:question ""}))
 ```
+
