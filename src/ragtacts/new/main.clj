@@ -1,9 +1,9 @@
 (ns ragtacts.new.main
-  (:require [ragtacts.new.core :refer :all]
-            [ragtacts.new.vector-store.milvus :refer [milvus]]
-            [ragtacts.new.loader.web :as web]
-            [ragtacts.new.loader.doc :as doc]
-            [ragtacts.new.embedding.open-ai :refer [open-ai-embedding]]
+  (:require [ragtacts.core :refer :all]
+            [ragtacts.vector-store.milvus :refer [milvus]]
+            [ragtacts.loader.web :as web]
+            [ragtacts.loader.doc :as doc]
+            [ragtacts.embedding.open-ai :refer [open-ai-embedding]]
             [clojure.string :as str]))
 
 (comment

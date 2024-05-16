@@ -1,6 +1,9 @@
-(ns ragtacts.vector-store.base)
+(ns ragtacts.vector-store.base
+  (:require [ragtacts.embedding.base :as embedding]))
 
-(defprotocol VectorStore
-  (insert [this embeddings])
-  (delete-by-id [this id])
-  (search [this embeddings opts]))
+(defmulti save (fn [{:keys [db]} docs] (:type db)))
+
+(defmulti search (fn [{:keys [db]} query & [params]] (:type db)))
+
+(defn embed [{:keys [embedding]} texts]
+  (embedding/embed embedding texts))

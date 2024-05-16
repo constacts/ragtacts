@@ -1,8 +1,9 @@
 (ns ragtacts.server
-  (:require [muuntaja.core :as m]
-            [ragtacts.app :as app]
-            [ragtacts.collection :as collection]
+  (:require [clojure.string :as str]
+            [muuntaja.core :as m]
+            [ragtacts.core :refer [ask prompt search]]
             [ragtacts.logging :as log]
+            [ragtacts.prompt.base :refer [rag-prompt]]
             [reitit.coercion.spec]
             [reitit.ring :as ring]
             [reitit.ring.coercion :as coercion]
@@ -14,7 +15,7 @@
             [reitit.swagger-ui :as swagger-ui]
             [ring.adapter.undertow :refer [run-undertow]]))
 
-(defn handler [app]
+(defn app [db]
   (ring/ring-handler
    (ring/router
     [["/swagger.json"
@@ -31,9 +32,12 @@
                :parameters {:body {:prompt string?}}
                :responses {200 {:body {:text string?}}}
                :handler (fn [{:keys [parameters]}]
-                          (let [prompt (-> parameters :body :prompt)]
+                          (let [query (-> parameters :body :prompt)
+                                result (ask (prompt rag-prompt
+                                                    {:context (str/join "\n" (search db query))
+                                                     :question query}))]
                             {:status 200
-                             :body {:text (:text (app/chat app prompt))}}))}}]]]
+                             :body {:text (-> result last :ai)}}))}}]]]
 
     {:data {:coercion reitit.coercion.spec/coercion
             :muuntaja m/instance
@@ -49,11 +53,10 @@
     (swagger-ui/create-swagger-ui-handler {:path "/"})
     (ring/create-default-handler))))
 
-(defn start [app opts]
+(defn start [{:keys [db] :as opts}]
   (try
     (let [opts (merge {:port 3000 :host "0.0.0.0"} opts)
-          server  (run-undertow (handler app) (dissoc opts :handler))]
-      (collection/sync (:collection app) identity)
+          server (run-undertow (app db) (dissoc opts :handler))]
       (log/info "Server started on port" (:port opts))
       server)
     (catch Throwable t
