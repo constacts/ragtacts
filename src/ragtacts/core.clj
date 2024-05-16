@@ -101,6 +101,14 @@
       ask
       last)
 
+   ;; Langchain Hub 프롬프트 템플릿 쓰기
+  (require '[ragtacts.prompt.langchain :as langchain])
+  (-> (prompt (langchain/hub "rlm/rag-prompt")
+              {:context "Constacts는 새로운 소셜 미디어입니다."
+               :question "Constacts는 무엇인가요?"})
+      ask
+      last)
+
 
   ;; 퓨샷 러닝
   (-> (ask [{:user "정말 멋지네요!"}
@@ -130,7 +138,6 @@
     [^{:type "number" :desc "체중"} weight
      ^{:type "number" :desc "키"} height]
     0)
-
 
   ;; 함수를 사용해서 질문하기
   (ask "토끼 체중은 10kg이고 키는 0.1m입니다. DMI는 얼마입니까?" {:tools [#'tmi #'dmi]})

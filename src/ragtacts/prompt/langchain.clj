@@ -1,6 +1,45 @@
-(ns ragtacts.prompt.langchain)
+(ns ragtacts.prompt.langchain
+  (:require [hato.client :as http]))
 
-;; TODO: Implement this function.
-  ;; langchainhub 파이썬 모듈에 pull_repo 함수를 찾아서 보고 만들어야 한다.
-  ;; 예제) https://github.com/langchain-ai/langchain/blob/master/libs/langchain/langchain/hub.py#L67
-(defn hub [repo])
+(def ^:private base-url "https://api.hub.langchain.com")
+
+(defn- get-latest-commit-hash [repo]
+  (let [url (str base-url "/commits/" repo "/?limit=10&offset=0")
+        {:keys [status body]} (http/get url {:as :json})]
+    (when (= 200 status)
+      (-> body
+          :commits
+          first
+          :commit_hash))))
+
+(defn hub
+  "Retrun a public repository prompt template from the [Langchain Hub](https://smith.langchain.com/hub).
+   
+   Example:
+   ```clojure
+   (hub \"rlm/rag-prompt\")
+   ```
+   "
+  [repo]
+  (when-let [latest-commit-hash (get-latest-commit-hash repo)]
+    (let [url (str base-url "/commits/" repo "/" latest-commit-hash)
+          {:keys [status body]} (http/get url {:as :json})]
+      (when (= 200 status)
+        (let [{:keys [template
+                      template_format]} (-> body
+                                            :manifest
+                                            :kwargs
+                                            :messages
+                                            first
+                                            :kwargs
+                                            :prompt
+                                            :kwargs)]
+          (if (= "f-string" template_format)
+            template
+            (throw (ex-info "Only f-string template is supported"
+                            {:template-format template_format}))))))))
+
+(comment
+  (hub "rlm/rag-prompt")
+  ;;
+  )

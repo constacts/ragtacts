@@ -3,7 +3,7 @@
             [muuntaja.core :as m]
             [ragtacts.core :refer [ask prompt search]]
             [ragtacts.logging :as log]
-            [ragtacts.prompt.base :refer [rag-prompt]]
+            [ragtacts.prompt.langchain :as langchain]
             [reitit.coercion.spec]
             [reitit.ring :as ring]
             [reitit.ring.coercion :as coercion]
@@ -15,7 +15,7 @@
             [reitit.swagger-ui :as swagger-ui]
             [ring.adapter.undertow :refer [run-undertow]]))
 
-(defn app [db]
+(defn app [db rag-prompt]
   (ring/ring-handler
    (ring/router
     [["/swagger.json"
@@ -56,7 +56,8 @@
 (defn start [{:keys [db] :as opts}]
   (try
     (let [opts (merge {:port 3000 :host "0.0.0.0"} opts)
-          server (run-undertow (app db) (dissoc opts :handler))]
+          rag-prompt (langchain/hub "rlm/rag-prompt")
+          server (run-undertow (app db rag-prompt) (dissoc opts :handler))]
       (log/info "Server started on port" (:port opts))
       server)
     (catch Throwable t
