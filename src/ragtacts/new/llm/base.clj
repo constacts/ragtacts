@@ -34,4 +34,3 @@
    (ask q (if type
             params
             (assoc params :type :open-ai)))))
-   
