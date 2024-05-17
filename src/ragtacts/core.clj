@@ -152,11 +152,46 @@
     (search db "토끼와 호랑이 중에 누가 더 나이가 많습니까?"))
 
 
+  ;; 벡터 저장소에 메타데이터와 함께 저장하기
+  (let [db (vector-store)]
+    (save db [{:text "토끼는 3살"
+               :metadata {:animal "형"}}
+              {:text "토끼는 5살"
+               :metadata {:animal "동생"}}])
+    (search db "토끼와 호랑이 중에 누가 더 나이가 많습니까?"))
+
+
+  ;; 메타데이터로 필터링해서 검색하기
+  (let [db (vector-store)]
+    (save db [{:text "토끼는 3살"
+               :metadata {:animal "형"}}
+              {:text "토끼는 5살"
+               :metadata {:animal "동생"}}])
+    (search db "토끼와 호랑이 중에 누가 더 나이가 많습니까?" {:metadata {:animal "형"}}))
+
+
+  ;; 여러 벡터 디비에서 검색하기
+  (let [db1 (vector-store)
+        db2 (vector-store)]
+    (save db1 ["토끼는 3살" "곰은 12살" "토끼와 호랑이"])
+    (save db2 ["강아지는 5살" "고양이는 7살" "사자는 10살" "호랑이는 8살"])
+    (search [db1 db2] "토끼와 호랑이 중에 누가 더 나이가 많습니까?"))
+
   ;; Milvus 벡터 저장소 사용하기
   (let [db (vector-store {:type :milvus
                           :collection "animals"})]
     (save db ["토끼는 3살" "곰은 12살" "다람쥐는 14살" "강아지는 5살" "고양이는 7살" "사자는 10살" "호랑이는 8살"])
     (search db "토끼와 호랑이 중에 누가 더 나이가 많습니까?"))
+
+
+  ;; Milvus 벡터 저장소 필터링해서 검색하기
+  (let [db (vector-store {:type :milvus
+                          :collection "animals_metadata"})]
+    (save db [{:text "토끼는 3살"
+               :metadata {:animal "형"}}
+              {:text "토끼는 5살"
+               :metadata {:animal "동생"}}])
+    (search db "토끼와 호랑이 중에 누가 더 나이가 많습니까?" {:metadata {:animal "형"}}))
 
 
   ;; 웹 문서에서 텍스트 가져와서 벡터 저장소에 저장하기

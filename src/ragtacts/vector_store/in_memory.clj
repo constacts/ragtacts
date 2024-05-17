@@ -6,8 +6,12 @@
   (:import [dev.langchain4j.data.document Metadata]
            [dev.langchain4j.data.embedding Embedding]
            [dev.langchain4j.data.segment TextSegment]
-           [dev.langchain4j.store.embedding EmbeddingSearchRequest]
+           [dev.langchain4j.store.embedding
+            EmbeddingSearchRequest
+            EmbeddingSearchResult
+            EmbeddingMatch]
            [dev.langchain4j.store.embedding.inmemory InMemoryEmbeddingStore]
+           [dev.langchain4j.store.embedding.filter MetadataFilterBuilder]
            [java.util HashMap]))
 
 (defn- doc->text-segment [{:keys [id
@@ -35,17 +39,41 @@
                   embeddings)
              (map doc->text-segment chunked-docs))))
 
+(defn- ->filter [metadata]
+  (when metadata
+    (reduce
+     (fn [filter [k v]]
+       (if filter
+         (.and filter (.isEqualTo (MetadataFilterBuilder. (name k)) v))
+         (.isEqualTo (MetadataFilterBuilder. (name k)) v)))
+     nil
+     metadata)))
+
 (defmethod search :in-memory
   ([db query]
    (search db query {}))
-  ([{:keys [embedding db]} query {:keys [top-k]}]
+  ([{:keys [embedding db]} query {:keys [top-k metadata raw?]}]
    (let [embeddings (embed embedding [query])
          embedding (Embedding. (float-array (map float (first embeddings))))
          ^InMemoryEmbeddingStore store (:store db)
-         result (.search store
-                         (EmbeddingSearchRequest.
-                          embedding
-                          (int (or top-k 5))
-                          0.0
-                          nil))]
-     (map #(.text (.embedded %)) (.matches result)))))
+         filter (->filter metadata)
+         ^EmbeddingSearchResult result (.search store
+                                                (EmbeddingSearchRequest.
+                                                 embedding
+                                                 (int (or top-k 5))
+                                                 0.0
+                                                 filter))]
+     (map
+      (fn [^EmbeddingMatch match]
+        (if raw?
+          {:text (.text (.embedded match))
+           :score (.score match)
+           :vector (map float (.vector (.embedding match)))
+           :metadata (into {} (.asMap (.metadata (.embedded match))))}
+          (.text (.embedded match))))
+      (.matches result)))))
+
+(comment
+  (->filter {:a 1})
+  ;;
+  )

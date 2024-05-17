@@ -2,23 +2,49 @@
   (:require [ragtacts.embedding.base :as embedding]))
 
 (defmulti save
-  "Returns the answer to the question you asked the LLM.
-     
+  "  
      Args:
-     - q: The string or messages seq question you want to ask the LLM. If it were a sequence of 
-      messages, the items would have the following keys and string values: `:system`, `:user`, `:ai`.
-       - [{:system \"You are a helpful assistant.\"}, {:user \"Hello!\"}]
-         
-     - params: A map of parameters to pass to the LLM.
-       - :type: The type of LLM to use. Defaults to :open-ai.
-  
+     - db: 
+     - docs:
+     - params:
+   
      Returns:
-     - String: The answer to the question you asked the LLM.
-  
+   
      Example:"
   (fn [{:keys [db]} docs] (:type db)))
 
-(defmulti search (fn [{:keys [db]} query & [params]] (:type db)))
+(defmulti search (fn [db-or-dbs query & [params]]
+                   (if (vector? db-or-dbs)
+                     :multi
+                     (-> db-or-dbs :db :type))))
+
+(defmethod search :multi
+  ([dbs query]
+   (search dbs query {}))
+  ([dbs query params]
+   (let [docs (->> dbs
+                   (map #(search % query (assoc params :raw? true)))
+                   flatten)
+         rrfs (reduce (fn [result {:keys [text score]}]
+                        (update result text #(let [rrf (/ 0.5 (+ score 60))]
+                                               (if %
+                                                 (+ % rrf)
+                                                 rrf))))
+                      {}
+                      docs)
+         docs-with-rrf (map #(assoc % :rrf (get rrfs (:text %))) docs)
+         sorted-docs (->> (sort-by :rrf docs-with-rrf)
+                          (map #(dissoc % :rrf)))]
+     (if (:raw? params)
+       sorted-docs
+       (map :text sorted-docs)))))
 
 (defn embed [{:keys [embedding]} texts]
   (embedding/embed embedding texts))
+
+(comment
+  (search [] "test" {})
+
+  (reverse (sort-by second {:a 3 :b 1 :c 2}))
+  ;;
+  )

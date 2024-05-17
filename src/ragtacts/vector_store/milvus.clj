@@ -76,17 +76,28 @@
         (catch Exception e
           (.printStackTrace e))))))
 
+
+(defn ->expr [metadata]
+  (when metadata
+    (reduce
+     (fn [expr [k v]]
+       (if expr
+         (str expr " && " (str (name k) " == " (json/generate-string v)))
+         (str (name k) " == " (json/generate-string v))))
+     nil
+     metadata)))
+
 (defmethod search :milvus
   ([db query]
    (search db query {}))
-  ([{:keys [embedding db]} query {:keys [top-k expr]}]
+  ([{:keys [embedding db]} query {:keys [top-k metadata]}]
    (let [embeddings (embed embedding [query])
          collection (-> db :collection)]
      (with-open [client (milvus/client  (:params db))]
        (let [results (milvus/search client {:collection-name collection
                                             :metric-type :l2
                                             :vectors (map #(map float %) embeddings)
-                                            :expr expr
+                                            :expr (->expr metadata)
                                             :vector-field-name "vector"
                                             :out-fields ["text" "vector"]
                                             :top-k (int (or top-k 5))})]
@@ -95,3 +106,7 @@
               (map :entity)
               (map #(get % "text"))))))))
 
+(comment
+  (->expr {:a 1 :b 2})
+  ;;
+  )

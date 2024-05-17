@@ -9,6 +9,7 @@
            [dev.langchain4j.data.segment TextSegment]
            [dev.langchain4j.store.embedding EmbeddingSearchRequest]
            [dev.langchain4j.store.embedding.inmemory InMemoryEmbeddingStore]
+
            [java.util HashMap]))
 
 (def ^:private db-file "db.json")
@@ -52,7 +53,7 @@
             (.remove entries entry))))
       (.serializeToFile store db-file)))
 
-  (search [_ embeddings {:keys [top-k expr]}]
+  (search [_ embeddings {:keys [top-k metadata]}]
     (let [embedding (Embedding. (float-array (map float (:vectors (first embeddings)))))
           result (.search store
                           (EmbeddingSearchRequest.
