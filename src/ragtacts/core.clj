@@ -1,7 +1,6 @@
 (ns ragtacts.core
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
-            [clojure.walk :refer [stringify-keys]]
             [ragtacts.embedding.open-ai :refer [open-ai-embedding]]
             [ragtacts.llm.base :as llm]
             [ragtacts.llm.open-ai]
@@ -10,9 +9,7 @@
             [ragtacts.util :refer [f-string]]
             [ragtacts.splitter.recursive :refer [recursive-splitter]]
             [ragtacts.vector-store.base :as vector-store]
-            [ragtacts.vector-store.in-memory :refer [in-memory-vector-store]])
-  (:import [com.hubspot.jinjava Jinjava]
-           [java.text MessageFormat]))
+            [ragtacts.vector-store.in-memory :refer [in-memory-vector-store]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; llm
@@ -81,8 +78,6 @@
 
 (comment
 
-
-  (.) (MessageFormat. "test {0}")
   ;; 물어보기
   (ask "Hello!")
 
@@ -128,7 +123,7 @@
       last)
 
 
-  ;; 함수 부르기
+  ;; 함수를 사용해서 질문하기
   (defn ^{:desc "TMI를 구하는 함수입니다"} tmi
     [^{:type "number" :desc "체중"} weight
      ^{:type "number" :desc "키"} height]
@@ -139,8 +134,11 @@
      ^{:type "number" :desc "키"} height]
     0)
 
-  ;; 함수를 사용해서 질문하기
   (ask "토끼 체중은 10kg이고 키는 0.1m입니다. DMI는 얼마입니까?" {:tools [#'tmi #'dmi]})
+
+
+  ;; 함수 결과 값을 그대로 받기
+  (ask "토끼 체중은 10kg이고 키는 0.1m입니다. DMI는 얼마입니까?" {:tools [#'tmi #'dmi] :as :value})
 
 
   ;; 벡터 저장소에 저장하기
@@ -195,17 +193,10 @@
 
 
   ;; 벡터 저장소에서 가져온 내용을 문맥으로 질문하기
-  (let [rag-prompt
-        "You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use three sentences maximum and keep the answer concise.
-        Question: { question }
-        Context: { context }
-        Answer:"
+  (let [rag-prompt (langchain/hub "rlm/rag-prompt")
         db (vector-store)
         question "토끼와 호랑이 중에 누가 더 나이가 많습니까?"]
     (save db ["토끼는 3살" "곰은 12살" "다람쥐는 14살" "강아지는 5살" "고양이는 7살" "사자는 10살" "호랑이는 8살"])
     (-> (ask (prompt rag-prompt {:context (str/join "\n" (search db question))
                                  :question question}))
-        last))
-
-  ;;
-  )
+        last)))

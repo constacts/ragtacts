@@ -9,7 +9,10 @@
      - [{:system \"You are a helpful assistant.\"}, {:user \"Hello!\"}]
        
    - params: A map of parameters to pass to the LLM.
-     - :type: The type of LLM to use. Defaults to :open-ai.
+     - `:type`: The type of LLM to use. Defaults to :open-ai.
+     - `:tools`: List of function Vars to use as tools for the LLM.
+     - `:as`: If you use `:value` in the `:as` option when tool is invoked with the tools
+              option, it will return the resulting value of tool.
 
    Returns:
    - String: The answer to the question you asked the LLM.

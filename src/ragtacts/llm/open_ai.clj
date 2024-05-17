@@ -59,7 +59,7 @@
         first
         :message)))
 
-(defmethod ask :open-ai [q {:keys [model tools]}]
+(defmethod ask :open-ai [q {:keys [model tools as]}]
   (let [msgs (question->msgs q)
         result (chat-completion {:model model
                                  :msgs msgs
@@ -70,16 +70,20 @@
                                           #(json/parse-string % true))
             tool (select-tool-by-name tools function)]
         (when tool
-          (conj (vec msgs)
-                {:ai (:content
+          (let [tool-result (apply-fn tool function)]
+            (conj (vec msgs)
+                  {:ai
+                   (if (= :value as)
+                     tool-result
+                     (:content
                       (chat-completion
                        {:model model
                         :msgs (concat msgs
                                       [{:tool-calls (-> result :tool_calls)}
-                                       {:tool (json/generate-string (apply-fn tool function))
+                                       {:tool (json/generate-string tool-result)
                                         :tool-call-id (-> result :tool_calls first :id)}]
                                       [(last msgs)])
-                        :tools tools}))})))
+                        :tools tools})))}))))
       (conj (vec msgs) {:ai (:content result)}))))
 
 (comment
