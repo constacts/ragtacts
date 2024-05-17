@@ -67,7 +67,6 @@
       (fn [^EmbeddingMatch match]
         (if raw?
           {:text (.text (.embedded match))
-           :score (.score match)
            :vector (map float (.vector (.embedding match)))
            :metadata (into {} (.asMap (.metadata (.embedded match))))}
           (.text (.embedded match))))

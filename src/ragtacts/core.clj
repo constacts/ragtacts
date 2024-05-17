@@ -7,6 +7,7 @@
             [ragtacts.loader.doc :as doc]
             [ragtacts.loader.web :as web]
             [ragtacts.util :refer [f-string]]
+            [ragtacts.vector-store.milvus :refer [milvus]]
             [ragtacts.splitter.recursive :refer [recursive-splitter]]
             [ragtacts.vector-store.base :as vector-store]
             [ragtacts.vector-store.in-memory :refer [in-memory-vector-store]]))
@@ -171,22 +172,21 @@
 
 
   ;; 여러 벡터 디비에서 검색하기
-  (let [db1 (vector-store)
-        db2 (vector-store)]
-    (save db1 ["토끼는 3살" "곰은 12살" "토끼와 호랑이"])
+  (let [db1 (vector-store {:db (milvus {:collection (str "animals" (gensym))})})
+        db2 (vector-store {:db (milvus {:collection (str "animals" (gensym))})})]
+    (save db1 ["토끼는 3살" "곰은 12살" "토끼와 호랑이" "토끼와 호랑이 중에 누가 더 나이가 많습니까?"])
     (save db2 ["강아지는 5살" "고양이는 7살" "사자는 10살" "호랑이는 8살"])
-    (search [db1 db2] "토끼와 호랑이 중에 누가 더 나이가 많습니까?"))
+    (search [db1 db2] "토끼와 호랑이 중에 누가 더 나이가 많습니까?" {:weights [0.4 0.6]}))
+
 
   ;; Milvus 벡터 저장소 사용하기
-  (let [db (vector-store {:type :milvus
-                          :collection "animals"})]
+  (let [db (vector-store {:db (milvus {:collection "animals"})})]
     (save db ["토끼는 3살" "곰은 12살" "다람쥐는 14살" "강아지는 5살" "고양이는 7살" "사자는 10살" "호랑이는 8살"])
     (search db "토끼와 호랑이 중에 누가 더 나이가 많습니까?"))
 
 
   ;; Milvus 벡터 저장소 필터링해서 검색하기
-  (let [db (vector-store {:type :milvus
-                          :collection "animals_metadata"})]
+  (let [db (vector-store {:db (milvus {:collection (str "animals" (gensym))})})]
     (save db [{:text "토끼는 3살"
                :metadata {:animal "형"}}
               {:text "토끼는 5살"

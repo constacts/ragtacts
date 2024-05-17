@@ -21,21 +21,27 @@
 (defmethod search :multi
   ([dbs query]
    (search dbs query {}))
-  ([dbs query params]
-   (let [docs (->> dbs
-                   (map #(search % query (assoc params :raw? true)))
+  ([dbs query {:keys [raw? weights c] :as params}]
+   (let [weights (or weights (repeat (count dbs) 0.5))
+         c (or c 60)
+         docs (->> dbs
+                   (map-indexed (fn [idx db]
+                                  (let [result (search db query (assoc params :raw? true))]
+                                    (map-indexed #(assoc %2 :idx idx :rank (inc %1)) result))))
                    flatten)
-         rrfs (reduce (fn [result {:keys [text score]}]
-                        (update result text #(let [rrf (/ 0.5 (+ score 60))]
+         rrfs (reduce (fn [result {:keys [text idx rank]}]
+                        (update result text #(let [rrf (/ (nth weights idx) (+ rank c))]
                                                (if %
                                                  (+ % rrf)
                                                  rrf))))
                       {}
                       docs)
+
          docs-with-rrf (map #(assoc % :rrf (get rrfs (:text %))) docs)
          sorted-docs (->> (sort-by :rrf docs-with-rrf)
-                          (map #(dissoc % :rrf)))]
-     (if (:raw? params)
+                          reverse
+                          (map #(dissoc % :rrf :idx :rank)))]
+     (if raw?
        sorted-docs
        (map :text sorted-docs)))))
 
@@ -43,8 +49,5 @@
   (embedding/embed embedding texts))
 
 (comment
-  (search [] "test" {})
-
-  (reverse (sort-by second {:a 3 :b 1 :c 2}))
   ;;
   )

@@ -1,9 +1,10 @@
 (ns ragtacts.vector-store.milvus
-  (:require  [cheshire.core :as json]
-             [milvus-clj.core :as milvus]
-             [ragtacts.embedding.base :refer [embed text->doc]]
-             [ragtacts.vector-store.base :refer [save search]]
-             [ragtacts.splitter.base :refer [split]]))
+  (:require [cheshire.core :as json]
+            [clojure.walk :refer [keywordize-keys]]
+            [milvus-clj.core :as milvus]
+            [ragtacts.embedding.base :refer [embed text->doc]]
+            [ragtacts.splitter.base :refer [split]]
+            [ragtacts.vector-store.base :refer [save search]]))
 
 (defn- make-field [[key value]]
   (merge {:name (name key)}
@@ -51,9 +52,9 @@
                            :fields (concat [{:name "id" :values (map :id docs)}
                                             {:name "text" :values (map :text docs)}
                                             {:name "vector" :values embeddings}]
-                                           (map (fn [[key value]]
+                                           (map (fn [[key _]]
                                                   {:name (name key)
-                                                   :values (repeat (count docs) value)})
+                                                   :values (map #(-> % :metadata key) docs)})
                                                 metadata))})))
 
 (defn milvus [{:keys [host port db collection]}]
@@ -90,7 +91,7 @@
 (defmethod search :milvus
   ([db query]
    (search db query {}))
-  ([{:keys [embedding db]} query {:keys [top-k metadata]}]
+  ([{:keys [embedding db]} query {:keys [top-k metadata raw?]}]
    (let [embeddings (embed embedding [query])
          collection (-> db :collection)]
      (with-open [client (milvus/client  (:params db))]
@@ -100,11 +101,19 @@
                                             :expr (->expr metadata)
                                             :vector-field-name "vector"
                                             :out-fields ["text" "vector"]
-                                            :top-k (int (or top-k 5))})]
-         (->> results
-              first
-              (map :entity)
-              (map #(get % "text"))))))))
+                                            :top-k (int (or top-k 5))})
+             docs (->> results
+                       first
+                       (map (fn [{:keys [entity]}]
+                              {:text (get entity "text")
+                               :vector  (get entity "vector")
+                               :metadata (->
+                                          (into {} entity)
+                                          keywordize-keys
+                                          (dissoc :vector :text))})))]
+         (if raw?
+           docs
+           (map :text docs)))))))
 
 (comment
   (->expr {:a 1 :b 2})
