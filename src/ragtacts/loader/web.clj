@@ -9,6 +9,19 @@
   (str/starts-with? (get headers "content-type") "text/html"))
 
 (defn get-text
+  "Return the text of a web page.
+   
+  Args:
+  - url: A string with the URL of the web page.
+  - last-change: A map with the following keys
+    - `:last-modified`: A string with the last modified date.
+    - `:etag`: A string with the etag.
+   
+  Returns:
+  - A map with the following
+    - `:id`: A string with the document id.
+    - `:text`: A string with the document text.
+    - `:metadata`: A map with the document metadata."
   ([url]
    (get-text url nil))
   ([url {:keys [last-modified etag]}]
@@ -35,7 +48,23 @@
                                                          :url url}))
        nil))))
 
-(defn watch [{:keys [url interval last-change]} callback]
+(defn watch
+  "Watch a web page for changes.
+   
+   Args:
+   - url: A string with the URL of the web page.
+   - interval: An integer with the interval in milliseconds.
+   - callback: A function that receives a map with the following
+     - `:type`: A keyword with the change type. It can be `:create`, `:update`, or `:delete`.
+     - `:doc`: A map with the following keys
+       - `:id`: A string with the document id.
+       - `:text`: A string with the document text.
+       - `:metadata`: A map with the document metadata.
+   
+   Returns:
+   - A pool that can be stopped with `stop-watch`.
+   "
+  [{:keys [url interval last-change]} callback]
   (let [interval (or interval 10000)
         !last-change (atom (or last-change {:last-modified nil
                                             :etag nil}))
@@ -58,7 +87,9 @@
      pool)
     pool))
 
-(defn stop-watch [pool]
+(defn stop-watch
+  "Stop a web page watch pool."
+  [pool]
   (at/stop-and-reset-pool! pool))
 
 (comment

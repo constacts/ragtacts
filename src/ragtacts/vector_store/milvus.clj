@@ -57,7 +57,16 @@
                                                    :values (map #(-> % :metadata key) docs)})
                                                 metadata))})))
 
-(defn milvus [{:keys [host port db collection]}]
+(defn milvus
+  "Return a Milvus vector store.
+   
+   Args:
+   - A map with the following
+     - `:host`: A string with the host. Default is `localhost`.
+     - `:port`: An integer with the port. Default is `19530`.
+     - `:db`: A string with the database name. Default is `default`.
+     - `:collection`: A string with the collection name."
+  [{:keys [host port db collection]}]
   {:type :milvus
    :collection collection
    :params {:host (or host "localhost")
@@ -78,7 +87,7 @@
           (.printStackTrace e))))))
 
 
-(defn ->expr [metadata]
+(defn- ->expr [metadata]
   (when metadata
     (reduce
      (fn [expr [k v]]

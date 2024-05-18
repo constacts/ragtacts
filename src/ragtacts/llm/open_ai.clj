@@ -59,32 +59,48 @@
         first
         :message)))
 
-(defmethod ask :open-ai [q {:keys [model tools as]}]
+(defn- parse-arguments [result]
+  (update result :tool_calls
+          #(map (fn [tool-call]
+                  (update-in tool-call [:function :arguments]
+                             (fn [arguments]
+                               (json/parse-string arguments true))))
+                %)))
+
+(defn- ask-open-ai [q {:keys [model tools as]}]
   (let [msgs (question->msgs q)
         result (chat-completion {:model model
                                  :msgs msgs
                                  :tools tools})]
     (if (seq tools)
-      (let [{:keys [function]} (update-in (-> result :tool_calls first)
-                                          [:function :arguments]
-                                          #(json/parse-string % true))
-            tool (select-tool-by-name tools function)]
-        (when tool
-          (let [tool-result (apply-fn tool function)]
-            (conj (vec msgs)
-                  {:ai
-                   (if (= :value as)
-                     tool-result
-                     (:content
-                      (chat-completion
-                       {:model model
-                        :msgs (concat msgs
-                                      [{:tool-calls (-> result :tool_calls)}
-                                       {:tool (json/generate-string tool-result)
-                                        :tool-call-id (-> result :tool_calls first :id)}]
-                                      [(last msgs)])
-                        :tools tools})))}))))
+      (let [parsed-result (parse-arguments result)
+            fn-results (map (fn [{:keys [id function]}]
+                              (let [tool (select-tool-by-name tools function)]
+                                {:id id
+                                 :function function
+                                 :result (when tool
+                                           (apply-fn tool function))}))
+                            (:tool_calls parsed-result))]
+        (conj (vec msgs)
+              {:ai
+               (if (= :values as)
+                 (map (fn [{:keys [function result]}]
+                        {(keyword (:name function)) result}) fn-results)
+                 (:content
+                  (chat-completion
+                   {:model model
+                    :msgs (concat msgs
+                                  [{:tool-calls (-> result :tool_calls)}]
+                                  (map
+                                   (fn [{:keys [id result]}]
+                                     {:tool (json/generate-string result)
+                                      :tool-call-id id})
+                                   fn-results)
+                                  [(last msgs)])})))}))
       (conj (vec msgs) {:ai (:content result)}))))
+
+(defmethod ask :open-ai [q params]
+  (ask-open-ai q params))
 
 (comment
 

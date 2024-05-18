@@ -2,21 +2,40 @@
   (:require [ragtacts.embedding.base :as embedding]))
 
 (defmulti save
-  "  
-     Args:
-     - db: 
-     - docs:
-     - params:
+  "Save the documents in the database.
    
-     Returns:
-   
-     Example:"
+   Args:
+   - db: A map with the following
+     - `:type`: A keyword with the database type.
+   - docs: A list of documents."
   (fn [{:keys [db]} docs] (:type db)))
 
-(defmulti search (fn [db-or-dbs query & [params]]
-                   (if (vector? db-or-dbs)
-                     :multi
-                     (-> db-or-dbs :db :type))))
+(defmulti search
+  "Simularity search in the database.
+   
+   Args:
+   - db-or-dbs: A db or a list of dbs that multiple dbs can be searched.
+   - query: A string with the query.
+   - params: A map with the following
+     - `:raw?`: A boolean with the raw result.
+     - `:weights`: A list of floats with the weights.
+     - `:c`: An integer with the c value.
+   
+   Returns:
+   - A list of texts
+   
+   Exapmle:
+   ```clojure
+   (search db \"Hello!\")
+
+   (search db \"Hello!\" {:raw? true})
+
+   (search [db1 db2] \"Hello!\" {:weights [0.5 0.5] :c 60})
+   ```"
+  (fn [db-or-dbs query & [params]]
+    (if (vector? db-or-dbs)
+      :multi
+      (-> db-or-dbs :db :type))))
 
 (defmethod search :multi
   ([dbs query]
@@ -45,7 +64,17 @@
        sorted-docs
        (map :text sorted-docs)))))
 
-(defn embed [{:keys [embedding]} texts]
+(defn embed
+  "Return the embedding of a texts.
+   
+   Args:
+   - embedding: A map with the following
+     - `:type`: A keyword with the embedding type.
+   - texts: A list of strings.
+   
+   Returns:
+   - A list of float embeddings."
+  [{:keys [embedding]} texts]
   (embedding/embed embedding texts))
 
 (comment

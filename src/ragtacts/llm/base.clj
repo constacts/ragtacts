@@ -11,8 +11,10 @@
    - params: A map of parameters to pass to the LLM.
      - `:type`: The type of LLM to use. Defaults to :open-ai.
      - `:tools`: List of function Vars to use as tools for the LLM.
-     - `:as`: If you use `:value` in the `:as` option when tool is invoked with the tools
-              option, it will return the resulting value of tool.
+     - `:as`: If you use `:values` in the `:as` option when tool is invoked with the tools
+              option, it will return the resulting list of following map of tool calls:
+        - key: function name
+        - value: result of the function call
 
    Returns:
    - String: The answer to the question you asked the LLM.
@@ -26,6 +28,14 @@
    (ask \"Hello!\" {:type :open-ai :model \"gpt-4o\"})
 
    (ask [{:system \"You are a helpful assistant.\"}, {:user \"Hello!\"}])
+
+   ;; tools
+   (defn ^{:desc \"Get the current weather in a given location\"} get-current-weather 
+     [^{:type \"string\" :desc \"The city and state, e.g. San Francisco, CA\"} location] 
+     ...))
+                                                        
+   (ask \"What's the weather like in San Francisco, Tokyo, and Paris?\" 
+        {:tools [#'get-current-weather]})
    ```
    "
   (fn [q & {:keys [type]}] type))

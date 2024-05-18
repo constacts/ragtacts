@@ -5,7 +5,14 @@
            [dev.langchain4j.data.document.splitter DocumentSplitters]
            [dev.langchain4j.data.segment TextSegment]))
 
-(defn recursive-splitter [opts]
+(defn recursive-splitter
+  "Return a recursive splitter.
+   
+   Args:
+   - opts: A map with the following keys:
+     - `:size`: An integer with the size of the chunks.
+     - `:overlap`: An integer with the overlap of the chunks."
+  [opts]
   {:type :recursive
    :opts opts})
 

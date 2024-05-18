@@ -7,6 +7,7 @@
             [ragtacts.loader.doc :as doc]
             [ragtacts.loader.web :as web]
             [ragtacts.util :refer [f-string]]
+            [ragtacts.prompt.langchain :as langchain]
             [ragtacts.vector-store.milvus :refer [milvus]]
             [ragtacts.splitter.recursive :refer [recursive-splitter]]
             [ragtacts.vector-store.base :as vector-store]
@@ -48,6 +49,26 @@
 (def embed vector-store/embed)
 
 (defn vector-store
+  "Return a vector store.
+   
+   Args:
+   - embedding: A map with the following
+     - `:type`: A keyword with the embedding type.
+   - splitter: A map with the following
+   - db: A map with the following
+     - `:type`: A keyword with the db type.
+   
+   Example:
+   ```clojure
+   (vector-store)
+
+   (vector-store {:embedding (open-ai-embedding)})
+   
+   (vector-store {:splitter (recursive-splitter {:size 500 :overlap 10})
+                  :db (in-memory-vector-store)})
+   
+   (vector-store {:db (milvus {:collection \"animals\"})})
+   ```"
   ([]
    (vector-store {}))
   ([{:keys [embedding splitter db]}]
@@ -124,22 +145,16 @@
       last)
 
 
-  ;; 함수를 사용해서 질문하기
-  (defn ^{:desc "TMI를 구하는 함수입니다"} tmi
-    [^{:type "number" :desc "체중"} weight
-     ^{:type "number" :desc "키"} height]
-    (* weight height))
+  (defn ^{:desc "Get the current weather in a given location"} get-current-weather
+    [^{:type "string" :desc "The city, e.g. San Francisco"} location]
+    (case (str/lower-case location)
+      "tokyo" {:location "Tokyo" :temperature "10" :unit "fahrenheit"}
+      "san francisco" {:location "San Francisco" :temperature "72" :unit "fahrenheit"}
+      "paris" {:location "Paris" :temperature "22" :unit "fahrenheit"}
+      {:location location :temperature "unknown"}))
 
-  (defn ^{:desc "DMI를 구하는 함수입니다"} dmi
-    [^{:type "number" :desc "체중"} weight
-     ^{:type "number" :desc "키"} height]
-    0)
-
-  (ask "토끼 체중은 10kg이고 키는 0.1m입니다. DMI는 얼마입니까?" {:tools [#'tmi #'dmi]})
-
-
-  ;; 함수 결과 값을 그대로 받기
-  (ask "토끼 체중은 10kg이고 키는 0.1m입니다. DMI는 얼마입니까?" {:tools [#'tmi #'dmi] :as :value})
+  (ask "What 's the weather like in San Francisco, Tokyo, and Paris?"
+       {:tools [#'get-current-weather] :as :values})
 
 
   ;; 벡터 저장소에 저장하기
@@ -234,4 +249,7 @@
     (save db ["토끼는 3살" "곰은 12살" "다람쥐는 14살" "강아지는 5살" "고양이는 7살" "사자는 10살" "호랑이는 8살"])
     (-> (ask (prompt rag-prompt {:context (str/join "\n" (search db question))
                                  :question question}))
-        last)))
+        last))
+
+  ;;
+  )

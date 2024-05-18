@@ -24,7 +24,9 @@
                          (Metadata/from (HashMap. (stringify-keys metadata)))
                          (Metadata.)))))
 
-(defn in-memory-vector-store []
+(defn in-memory-vector-store
+  "Return an in-memory vector store."
+  []
   {:type :in-memory
    :store (InMemoryEmbeddingStore.)})
 
