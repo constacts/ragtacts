@@ -1,9 +1,9 @@
-# ragtacts
+# Ragtacts
 
-ragtacts를 사용해서 쉽게 LLM에게 물어보세요.
+Ragtacts를 사용해서 쉽게 LLM에게 물어보세요.
 
-[English](./README.md)
-[한국어](./README_kr.md)
+- [English](./README.md)
+- [한국어](./README_kr.md)
 
 ## 준비물
 
@@ -27,12 +27,12 @@ $ clojure -Tclj-new app :name myname/ragapp
 $ cd ragapp
 ```
 
-### ragtacts 라이브러리 추가하기
+### Ragtacts 라이브러리 추가하기
 
 [![Clojars Project](https://img.shields.io/clojars/v/com.constacts/ragtacts.svg)](https://clojars.org/com.constacts/ragtacts)
 
 
-`deps.edn` 파일을 열어 다음과 같이 `:deps`키 아래 ragtacts 라이브러리를 추가합니다.
+`deps.edn` 파일을 열어 다음과 같이 `:deps`키 아래 Ragtacts 라이브러리를 추가합니다.
 
 ```edn
 {:paths ["src" "resources"]
@@ -51,11 +51,11 @@ $ cd ragapp
                       {:git/tag "v0.5.1" :git/sha "dfb30dd"}}}}}
 ```
 
-준비가 끝났습니다. 이제 ragtacts 사용법을 알아봅시다.
+준비가 끝났습니다. 이제 Ragtacts 사용법을 알아봅시다.
 
-## ragtacts 라이브러리 사용법
+## Ragtacts 라이브러리 사용법
 
-ragtacts 라이브러리를 쓰려면 `ractacts.core` 네임스페이스를 `require` 해주면 됩니다.
+Ragtacts 라이브러리를 쓰려면 `ractacts.core` 네임스페이스를 `require` 해주면 됩니다.
 
 ```clojure
 (require '[ragtacts.core :refer :all])
@@ -183,7 +183,7 @@ ragtacts 라이브러리를 쓰려면 `ractacts.core` 네임스페이스를 `req
 질문 내용과 가장 유사한 몇 개의 데이터를 찾아서 LLM 프롬프트에 넣어주면 됩니다. 이러한 방식을 RAG(Retrieval-Augmented 
 Generation)이라고 합니다.
 
-ragtacts를 사용하면 쉽게 RAG를 할 수 있습니다. 먼저 벡터 데이터베이스에 데이터를 저장하고 검색해 봅시다.
+Ragtacts를 사용하면 쉽게 RAG를 할 수 있습니다. 먼저 벡터 데이터베이스에 데이터를 저장하고 검색해 봅시다.
 
 ```clojure
 (let [db (vector-store)]
@@ -294,7 +294,7 @@ ragtacts를 사용하면 쉽게 RAG를 할 수 있습니다. 먼저 벡터 데�
         :ai))
 ```
 
-ragtacts에는 웹 페이지나 폴더에 내용이 바뀌면 바뀐 내용을 새로 가져올 수 있는 `watch` 함수가 있습니다. 이 함수로 바뀌는 
+Ragtacts에는 웹 페이지나 폴더에 내용이 바뀌면 바뀐 내용을 새로 가져올 수 있는 `watch` 함수가 있습니다. 이 함수로 바뀌는 
 데이터를 벡터 데이터베이스와 맞출 수 있습니다.
 
 ```clojure
@@ -316,10 +316,10 @@ ragtacts에는 웹 페이지나 폴더에 내용이 바뀌면 바뀐 내용을 �
 (doc/stop-watch folder-wather)
 ```
 
-## ragtacts를 CLI로 사용하기
+## Ragtacts를 CLI로 사용하기
 
-ragtacts는 CLI로 쓸 수도 있습니다. ractacts.jar 파일을 자바로 실행하면 웹 페이지나, 문서를 기반으로 LLM에게 물어볼 수 
-있습니다.
+Ragtacts는 CLI로 쓸 수도 있습니다. [Releases](https://github.com/constacts/ragtacts/releases/)에 있는 
+ractacts.jar 파일을 다운로드 받아서 자바로 실행하면 웹 페이지나, 문서를 기반으로 LLM에게 물어볼 수 있습니다.
 
 ```bash
 $ java -jar target/ragtacts-standalone.jar -p "What is RAG?" -d https://aws.amazon.com/what-is/retrieval-augmented-generation/
@@ -335,9 +335,9 @@ AI: RAG, or Retrieval-Augmented Generation, is a process that optimizes the outp
 Prompt:
 ```
 
-## ragtacts를 API 서버로 사용하기
+## Ragtacts를 API 서버로 사용하기
 
-ragtacts는 API 서버로 쓸 수도 있습니다. 다음 명령어를 입력하고 [http://localhost:3000](http://localhost:3000)에 
+Ragtacts는 API 서버로 쓸 수도 있습니다. 다음 명령어를 입력하고 [http://localhost:3000](http://localhost:3000)에 
 접속해보세요. API는 OpenAI [Chat](https://platform.openai.com/docs/api-reference/chat) API와 호환됩니다.
 
 ```bash
@@ -467,7 +467,7 @@ $ java -jar target/ragtacts-standalone.jar -m server -d https://aws.amazon.com/w
 질문 내용과 가장 유사한 몇 개의 데이터를 찾아서 LLM 프롬프트에 넣어주면 됩니다. 이러한 방식을 RAG(Retrieval-Augmented 
 Generation)이라고 합니다.
 
-ragtacts를 사용하면 쉽게 RAG를 할 수 있습니다. 먼저 벡터 데이터베이스에 데이터를 저장하고 검색해 봅시다.
+Ragtacts를 사용하면 쉽게 RAG를 할 수 있습니다. 먼저 벡터 데이터베이스에 데이터를 저장하고 검색해 봅시다.
 
 ```clojure
 (let [db (vector-store)]
@@ -578,7 +578,7 @@ ragtacts를 사용하면 쉽게 RAG를 할 수 있습니다. 먼저 벡터 데�
         :ai))
 ```
 
-ragtacts에는 웹 페이지나 폴더에 내용이 바뀌면 바뀐 내용을 새로 가져올 수 있는 `watch` 함수가 있습니다. 이 함수로 바뀌는 
+Ragtacts에는 웹 페이지나 폴더에 내용이 바뀌면 바뀐 내용을 새로 가져올 수 있는 `watch` 함수가 있습니다. 이 함수로 바뀌는 
 데이터를 벡터 데이터베이스와 맞출 수 있습니다.
 
 ```clojure
@@ -600,9 +600,9 @@ ragtacts에는 웹 페이지나 폴더에 내용이 바뀌면 바뀐 내용을 �
 (doc/stop-watch folder-wather)
 ```
 
-## ragtacts를 CLI로 사용하기
+## Ragtacts를 CLI로 사용하기
 
-ragtacts는 CLI로 쓸 수도 있습니다. ractacts.jar 파일을 자바로 실행하면 웹 페이지나, 문서를 기반으로 LLM에게 물어볼 수 
+Ragtacts는 CLI로 쓸 수도 있습니다. ractacts.jar 파일을 자바로 실행하면 웹 페이지나, 문서를 기반으로 LLM에게 물어볼 수 
 있습니다.
 
 ```bash
@@ -619,9 +619,9 @@ AI: RAG, or Retrieval-Augmented Generation, is a process that optimizes the outp
 Prompt:
 ```
 
-## ragtacts를 API 서버로 사용하기
+## Ragtacts를 API 서버로 사용하기
 
-ragtacts는 API 서버로 쓸 수도 있습니다. 다음 명령어를 입력하고 [http://localhost:3000](http://localhost:3000)에 
+Ragtacts는 API 서버로 쓸 수도 있습니다. 다음 명령어를 입력하고 [http://localhost:3000](http://localhost:3000)에 
 접속해보세요. API는 OpenAI [Chat](https://platform.openai.com/docs/api-reference/chat) API와 호환됩니다.
 
 ```bash
