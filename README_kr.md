@@ -2,6 +2,9 @@
 
 ragtacts를 사용해서 쉽게 LLM에게 물어보세요.
 
+[English](./README.md)
+[한국어](./README_kr.md)
+
 ## 준비물
 
 ### Cljoure 설치하기
