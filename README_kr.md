@@ -1,6 +1,6 @@
 # Ragtacts
 
-Ragtacts를 사용해서 쉽게 LLM에게 물어보세요.
+Ragtacts로 쉽게 LLM에게 물어보세요!
 
 ## 문서
 
@@ -18,7 +18,11 @@ Ragtacts를 사용해서 쉽게 LLM에게 물어보세요.
 $ brew install clojure/tools/clojure
 ```
 
-### OpenAI 키 받기
+### OpenAI 키 만들기
+
+다음 내용을 참고해서 OpenAI API 키를 준비합니다. 
+
+https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key
 
 ### 연습 프로젝트 만들기
 
