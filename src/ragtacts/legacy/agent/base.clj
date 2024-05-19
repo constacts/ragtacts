@@ -1,15 +1,15 @@
 (ns ragtacts.legacy.agent.base
   (:require [cheshire.core :as json]
-            [ragtacts.legay.collection :as collection :refer [make-collection]]
-            [ragtacts.legay.connector.web-page :refer [make-web-page-connector]]
-            [ragtacts.legay.embedder.open-ai :refer [make-open-ai-embedder]]
-            [ragtacts.legay.llm.base :refer [query]]
-            [ragtacts.legay.llm.open-ai :refer [make-open-ai-llm]]
-            [ragtacts.legay.splitter.recursive :refer [make-recursive]]
-            [ragtacts.legay.tool.base :refer [metadata run]]
-            [ragtacts.legay.tool.collection-search :refer [make-collection-search-tool]]
-            [ragtacts.legay.tool.tavily-search :refer [make-tavily-search-tool]]
-            [ragtacts.legay.vector-store.in-memory :refer [make-in-memory-vector-store]]))
+            [ragtacts.legacy.collection :as collection :refer [make-collection]]
+            [ragtacts.legacy.connector.web-page :refer [make-web-page-connector]]
+            [ragtacts.legacy.embedder.open-ai :refer [make-open-ai-embedder]]
+            [ragtacts.legacy.llm.base :refer [query]]
+            [ragtacts.legacy.llm.open-ai :refer [make-open-ai-llm]]
+            [ragtacts.legacy.splitter.recursive :refer [make-recursive]]
+            [ragtacts.legacy.tool.base :refer [metadata run]]
+            [ragtacts.legacy.tool.collection-search :refer [make-collection-search-tool]]
+            [ragtacts.legacy.tool.tavily-search :refer [make-tavily-search-tool]]
+            [ragtacts.legacy.vector-store.in-memory :refer [make-in-memory-vector-store]]))
 
 (defprotocol Agent
   (chat [this prompt]))

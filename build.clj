@@ -50,30 +50,50 @@
     (b/jar opts))
   opts)
 
-(defn install "Install the JAR locally." [opts]
-  (let [opts (jar-opts opts)]
-    (b/install opts))
-  opts)
+(defn clean
+  "Delete the build target directory"
+  [_]
+  (println (str "Cleaning " target-dir))
+  (b/delete {:path target-dir}))
+
+(defn prep [_]
+  (println "Writing Pom...")
+  (b/write-pom {:class-dir class-dir
+                :lib lib
+                :version version
+                :basis basis
+                :src-dirs ["src"]})
+  (b/copy-dir {:src-dirs ["src" "resources"]
+               :target-dir class-dir}))
 
 (defn uber [args]
   (println "Compiling Clojure...")
   (b/compile-clj {:basis basis
                   :src-dirs ["src"]
                   :class-dir class-dir})
-  (println "\nCopying source...")
-  (b/copy-dir {:src-dirs ["resources" "src"] :target-dir class-dir})
   (println "Making uberjar...")
   (b/uber {:class-dir class-dir
            :uber-file uber-file
            :main main-cls
            :basis basis
-           :exclude [#"^META-INF/license/LICENSE\.boringssl\.txt$"
+           :exclude ["LICENSE"
+                     #"^META-INF/license/LICENSE\.boringssl\.txt$"
                      #"^META-INF/license/LICENSE\.mvn-wrapper\.txt$"
                      #"^META-INF/license/LICENSE\.aix-netbsd\.txt$"
                      #"^META-INF/license/LICENSE\.tomcat-native\.txt$"]}))
+
+(defn install "Install the JAR locally." [opts]
+  (let [opts (jar-opts opts)]
+    (b/install opts))
+  opts)
 
 (defn deploy "Deploy the JAR to Clojars." [opts]
   (let [{:keys [jar-file] :as opts} (jar-opts opts)]
     (dd/deploy {:installer :remote :artifact (b/resolve-path jar-file)
                 :pom-file (b/pom-path (select-keys opts [:lib :class-dir]))}))
   opts)
+
+(defn all [args]
+  (clean nil)
+  (prep nil)
+  (uber args))

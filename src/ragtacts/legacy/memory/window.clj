@@ -1,5 +1,5 @@
 (ns ragtacts.legacy.memory.window
-  (:require [ragtacts.memory.base :refer [ChatMemory add-chat get-chat-history make-chat-msg]])
+  (:require [ragtacts.legacy.memory.base :refer [ChatMemory add-chat get-chat-history make-chat-msg]])
   (:import [dev.langchain4j.memory.chat MessageWindowChatMemory]
            [dev.langchain4j.data.message SystemMessage UserMessage AiMessage]))
 
