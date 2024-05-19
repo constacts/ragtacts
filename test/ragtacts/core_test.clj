@@ -68,19 +68,19 @@
 (deftest vector-store-test
   (testing "Simple search test"
     (let [db (vector-store)]
-      (save db ["A" "B"])
+      (add db ["A" "B"])
       (is (= (search db "A") ["A" "B"]))))
 
   (testing "Search with metadata"
     (let [db (vector-store)]
-      (save db [{:text "A" :metadata {:animal "dog"}}
-                {:text "B" :metadata {:animal "cat"}}])
+      (add db [{:text "A" :metadata {:animal "dog"}}
+               {:text "B" :metadata {:animal "cat"}}])
       (is (= (search db "A" {:metadata {:animal "dog"}}) ["A"]))))
 
   (testing "Seach multiple vector stores"
     (let [db1 (vector-store)
           db2 (vector-store)]
-      (save db1 ["A" "B"])
-      (save db2 ["A" "B"])
+      (add db1 ["A" "B"])
+      (add db2 ["A" "B"])
       (is (= (search [db1 db2] "A") ["A" "A" "B" "B"])))))
       

@@ -184,7 +184,7 @@ ragtacts를 사용하면 쉽게 RAG를 할 수 있습니다. 먼저 벡터 데�
 
 ```clojure
 (let [db (vector-store)]
-  (save db ["The new data outside of the LLM's original training data set is called external data."
+  (add db ["The new data outside of the LLM's original training data set is called external data."
             "What Is RAG?"
             "The next question may be—what if the external data becomes stale?"
             "Retrieval-Augmented Generation (RAG) is the process of optimizing the output of a large language model."
@@ -195,13 +195,13 @@ ragtacts를 사용하면 쉽게 RAG를 할 수 있습니다. 먼저 벡터 데�
 ;;  model." "Recursive summarizat...)
 ```
 
-`vector-store` 함수는 메모리에 저장하는 벡터 데이터베이스를 만들어 줍니다. `save` 함수로 벡터 데이터베이스에 문서를 저장하고
+`vector-store` 함수는 메모리에 저장하는 벡터 데이터베이스를 만들어 줍니다. `add` 함수로 벡터 데이터베이스에 문서를 저장하고
 `search` 함수로 벡터 데이터베이스에서 가장 유사한 문서를 순서대로 가져옵니다. `search` 함수는 가장 유사한 문서 순서대로 5개를
 가져오도록 되어 있습니다. `top-k` 옵션 값으로 가져올 개수를 바꿀 수 있습니다.
 
 ```clojure
 (let [db (vector-store)]
-  (save db ["The new data outside of the LLM's original training data set is called external data."
+  (add db ["The new data outside of the LLM's original training data set is called external data."
             "What Is RAG?"
             "The next question may be—what if the external data becomes stale?"
             "Retrieval-Augmented Generation (RAG) is the process of optimizing the output of a large language model."
@@ -216,7 +216,7 @@ ragtacts를 사용하면 쉽게 RAG를 할 수 있습니다. 먼저 벡터 데�
 
 ```clojure
 (let [db (vector-store)]
-  (save db [{:text "What Is RAG?"
+  (add db [{:text "What Is RAG?"
               :metadata {:topic "RAG"}}
             {:text "The next question may be—what if the external data becomes stale?"
               :metadata {:topic "Tutorial"}}
@@ -233,7 +233,7 @@ ragtacts를 사용하면 쉽게 RAG를 할 수 있습니다. 먼저 벡터 데�
 
 ```clojure
 (let [db (vector-store)]
-  (save db [{:text "What Is RAG?"
+  (add db [{:text "What Is RAG?"
               :metadata {:topic "RAG"}}
             {:text "The next question may be—what if the external data becomes stale?"
               :metadata {:topic "Tutorial"}}
@@ -253,18 +253,18 @@ ragtacts를 사용하면 쉽게 RAG를 할 수 있습니다. 먼저 벡터 데�
 
 (let [db (vector-store)
       text (web/get-text "https://aws.amazon.com/what-is/retrieval-augmented-generation/")]
-  (save db [text])
+  (add db [text])
   (search db "What is RAG?"))
 
 (require '[ragtacts.loader.doc :as doc])
 
 (let [db (vector-store)
       text (doc/get-text "~/papers/RAPTOR.pdf")]
-  (save db [text])
+  (add db [text])
   (search db "What is RAPTOR?"))
 ```
 
-앞에서 말한 것처럼 벡터 데이터베이스에는 텍스트를 나눠서 넣습니다. `save` 함수는 인자로 넘긴 텍스트가 길면 잘라서 벡터 데이터베이스에
+앞에서 말한 것처럼 벡터 데이터베이스에는 텍스트를 나눠서 넣습니다. `add` 함수는 인자로 넘긴 텍스트가 길면 잘라서 벡터 데이터베이스에
 넣습니다. 기본 값은 500 글자입니다. 정확히 500 글자로 자르지 않고 텍스트를 자를 때 중간에 끊기지 않도록 합니다. `vector-store`
 함수에 `:splitter` 옵션으로 글자 수를 바꿀 수 있습니다. `:size`와 `:overlap` 옵션을 주면 됩니다. `:overlap` 크기로
 텍스트가 잘리지 않는 제한을 지정할 수 있습니다.
@@ -272,7 +272,7 @@ ragtacts를 사용하면 쉽게 RAG를 할 수 있습니다. 먼저 벡터 데�
 ```clojure
 (let [db (vector-store {:splitter {:size 100 :overlap 10}})
       text (doc/get-text "~/papers/RAPTOR.pdf")]
-  (save db [text])
+  (add db [text])
   (search db "What is RAPTOR?"))
 ```
 
@@ -284,7 +284,7 @@ ragtacts를 사용하면 쉽게 RAG를 할 수 있습니다. 먼저 벡터 데�
         text (web/get-text "https://aws.amazon.com/what-is/retrieval-augmented-generation/")
         rag-prompt (langchain/hub "rlm/rag-prompt")
         question "What is RAG?"]
-    (save db [text])
+    (add db [text])
     (-> (ask (prompt rag-prompt {:context (str/join "\n" (search db question))
                                  :question question}))
         last

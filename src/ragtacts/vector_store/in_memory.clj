@@ -1,7 +1,7 @@
 (ns ragtacts.vector-store.in-memory
   (:require [clojure.walk :refer [stringify-keys]]
             [ragtacts.embedding.base :refer [embed text->doc]]
-            [ragtacts.vector-store.base :refer [save search]]
+            [ragtacts.vector-store.base :refer [add search]]
             [ragtacts.splitter.base :refer [split]])
   (:import [dev.langchain4j.data.document Metadata]
            [dev.langchain4j.data.embedding Embedding]
@@ -30,7 +30,7 @@
   {:type :in-memory
    :store (InMemoryEmbeddingStore.)})
 
-(defmethod save :in-memory [{:keys [embedding splitter db]} texts-or-docs]
+(defmethod add :in-memory [{:keys [embedding splitter db]} texts-or-docs]
   (let [docs (map text->doc texts-or-docs)
         chunked-docs (split splitter docs)
         embeddings (embed embedding (map :text chunked-docs))

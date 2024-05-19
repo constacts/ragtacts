@@ -2,7 +2,7 @@
   (:gen-class)
   (:require [clojure.string :as str]
             [clojure.tools.cli :refer [parse-opts]]
-            [ragtacts.core :refer [ask get-text prompt save search
+            [ragtacts.core :refer [ask get-text prompt add search
                                    vector-store]]
             [ragtacts.prompt.langchain :as langchain]
             [ragtacts.server :as server]))
@@ -44,7 +44,7 @@
           "chat" (let [db (vector-store)
                        rag-prompt (langchain/hub "rlm/rag-prompt")]
                    (doseq [data-source data-sources]
-                     (save db [(get-text data-source)]))
+                     (add db [(get-text data-source)]))
                    (loop [msgs []]
                      (print "\u001B[32mPrompt: \u001B[0m")
                      (flush)
@@ -59,14 +59,14 @@
 
           "server" (let [db (vector-store)
                          _ (doseq [data-source data-sources]
-                             (save db [(get-text data-source)]))
+                             (add db [(get-text data-source)]))
                          server (server/start {:db db})]
                      (.addShutdownHook (Runtime/getRuntime) (Thread. #(server/stop server))))
 
           "query" (let [db (vector-store)
                         rag-prompt (langchain/hub "rlm/rag-prompt")]
                     (doseq [data-source data-sources]
-                      (save db [(get-text data-source)]))
+                      (add db [(get-text data-source)]))
                     (println "\u001B[34mAI:"
                              (->
                               (ask (prompt rag-prompt {:context (str/join "\n" (search db query))

@@ -1,13 +1,19 @@
 (ns ragtacts.vector-store.base
   (:require [ragtacts.embedding.base :as embedding]))
 
-(defmulti save
-  "Save the documents in the database.
+(defmulti add
+  "Add the documents in the database.
    
    Args:
    - db: A map with the following
      - `:type`: A keyword with the database type.
-   - docs: A list of documents."
+   - docs: A list of documents.
+   
+   Example:
+   ```clojure
+   (add (vector-store) [\"Hello!\" \"World!\"])
+   ```
+   "
   (fn [{:keys [db]} docs] (:type db)))
 
 (defmulti search

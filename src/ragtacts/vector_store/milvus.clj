@@ -4,7 +4,7 @@
             [milvus-clj.core :as milvus]
             [ragtacts.embedding.base :refer [embed text->doc]]
             [ragtacts.splitter.base :refer [split]]
-            [ragtacts.vector-store.base :refer [save search]]))
+            [ragtacts.vector-store.base :refer [add search]]))
 
 (defn- make-field [[key value]]
   (merge {:name (name key)}
@@ -73,7 +73,7 @@
             :port (or port 19530)
             :database (or db "default")}})
 
-(defmethod save :milvus [{:keys [embedding splitter db]} texts-or-docs]
+(defmethod add :milvus [{:keys [embedding splitter db]} texts-or-docs]
   (let [docs (map text->doc texts-or-docs)
         chunked-docs (split splitter docs)
         embeddings (embed embedding (map :text chunked-docs))
