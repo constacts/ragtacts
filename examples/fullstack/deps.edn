@@ -1,0 +1,32 @@
+{:paths ["src" "resources"]
+ :deps {org.clojure/clojure            {:mvn/version "1.11.3"}
+        org.clojure/clojurescript      {:mvn/version "1.11.121"}
+        com.hyperfiddle/electric       {:mvn/version "v2-alpha-540-ga4699532"}
+        ring/ring                      {:mvn/version "1.11.0"}
+        org.clojure/tools.logging      {:mvn/version "1.2.4"}
+        ch.qos.logback/logback-classic {:mvn/version "1.4.14"}
+        com.constacts/ragtacts         {:mvn/version "0.3.0-SNAPSHOT"}}
+ :aliases
+ {:dev {:extra-paths ["src-dev"]
+        :extra-deps  {thheller/shadow-cljs          {:mvn/version "2.26.2"}
+                      io.github.clojure/tools.build {:mvn/version "0.9.6"
+                                                     :exclusions  [com.google.guava/guava
+                                                                   org.slf4j/slf4j-nop]}}}
+  :proc {}
+  :build {:extra-paths ["src-build"]
+          :ns-default  build
+          :extra-deps  {thheller/shadow-cljs          {:mvn/version "2.26.2"}
+                        io.github.clojure/tools.build {:mvn/version "0.9.6"
+                                                       :exclusions  [com.google.guava/guava
+                                                                     org.slf4j/slf4j-nop]}}}
+  ;; :run-m {:main-opts ["-m" "ragtacts.fullstack"]}
+  ;; :run-x {:ns-default ragtacts.fullstack
+  ;;         :exec-fn greet
+  ;;         :exec-args {:name "Clojure"}}
+  ;; :build {:deps {io.github.clojure/tools.build
+  ;;                {:mvn/version "0.10.3"}}
+  ;;         :ns-default build}
+  :test {:extra-paths ["test"]
+         :extra-deps {org.clojure/test.check {:mvn/version "1.1.1"}
+                      io.github.cognitect-labs/test-runner
+                      {:git/tag "v0.5.1" :git/sha "dfb30dd"}}}}}

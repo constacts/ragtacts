@@ -9,10 +9,6 @@ Ask LLMs easily with Ragtacts!
 
 ## Prerequisites
 
-Prepare your OpenAI API key by referring to the following information.
-
-https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key
-
 ### Install Clojure
 
 Please install [java](https://clojure.org/guides/install_clojure#java) and 
@@ -24,6 +20,10 @@ $ brew install clojure/tools/clojure
 ```
 
 ### Prepare your OpenAI API Key
+
+Prepare your OpenAI API key by referring to the following information.
+
+https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key
 
 ### Create a project
 

@@ -1,0 +1,57 @@
+html,
+body,
+html body * {
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+}
+
+body {
+  font-size: 18px;
+}
+
+input,
+textarea,
+button,
+select,
+a {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+a,
+a:hover,
+a:active,
+a:focus,
+a:visited {
+  text-decoration: none;
+  color: inherit;
+  
+}
+
+strong {
+  font-weight: 700;
+}
+
+button,
+a,
+a:active,
+input,
+textarea,
+select,
+label,
+[role=button] {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+
+}
+
+* {
+    box-sizing: border-box;
+}
+button {
+  background: inherit;
+  border:none;
+  box-shadow:none;
+  border-radius:0;
+  padding:0;
+  overflow:visible; 
+  cursor:pointer;
+}

@@ -1,5 +1,6 @@
 (ns ragtacts.loader.doc
-  (:require [clojure.java.io :as io]
+  (:require [clj-ulid :refer [ulid]]
+            [clojure.java.io :as io]
             [clojure.string :as str])
   (:import [dev.langchain4j.data.document Document DocumentParser]
            [dev.langchain4j.data.document.parser.apache.tika ApacheTikaDocumentParser]))
@@ -13,11 +14,17 @@
       - `:text`: A string with the document text.
       - `:metadata`: A map with the document metadata.
    "
-  [path]
-  (let [path (str/replace path #"~" (System/getProperty "user.home"))
+  [path-or-input-stream]
+  (let [input-stream (if (string? path-or-input-stream)
+                       (-> path-or-input-stream
+                           (str/replace #"~" (System/getProperty "user.home"))
+                           io/input-stream)
+                       path-or-input-stream)
         ^DocumentParser parser (ApacheTikaDocumentParser.)
-        ^Document doc (.parse parser (io/input-stream path))]
-    {:id path
+        ^Document doc (.parse parser input-stream)]
+    {:id (if (string? path-or-input-stream)
+           path-or-input-stream
+           (ulid))
      :text (.text doc)
      :metadata {}}))
 
