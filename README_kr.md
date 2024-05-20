@@ -7,6 +7,8 @@ Ragtacts로 쉽게 LLM에게 물어보세요!
 - [English](./README.md)
 - [한국어](./README_kr.md)
 
+- [ractacts cljdoc](https://cljdoc.org/d/com.constacts/ragtacts/0.3.0/doc/readme)
+
 ## 준비물
 
 ### Cljoure 설치하기
