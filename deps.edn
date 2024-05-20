@@ -1,5 +1,5 @@
 {:paths ["src" "resources"]
- :deps {org.clojure/clojure {:mvn/version "1.11.2"}
+ :deps {org.clojure/clojure {:mvn/version "1.11.3"}
         org.clojure/tools.cli {:mvn/version "1.1.230"}
         hato/hato {:mvn/version "0.9.0"}
         clj-ulid/clj-ulid {:mvn/version "1.0.0"}
