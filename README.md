@@ -1,220 +1,378 @@
 # Ragtacts
 
-RAG(Retrieval-Augmented Generation) with your own evolving data.
+Ask LLMs easily with Ragtacts!
 
-## What is RAG?
+## Documents
 
-RAG stands for Retrieval-Augmented Generation. It is a language model architecture that combines 
-a large pre-trained language model with a retrieval system to access external knowledge sources 
-like Wikipedia. This allows the model to generate outputs based not only on its training data, 
-but also on relevant information retrieved from these knowledge bases, enabling improved factual 
-grounding and question-answering capabilities.
+- [English](./README.md)
+- [한국어](./README_kr.md)
 
-## Getting Started 
+## Prerequisites
 
-### As a Library
+### Install Clojure
+
+Please install [java](https://clojure.org/guides/install_clojure#java) and 
+[brew](https://clojure.org/guides/install_clojure#java) first to install Clojure.
+And install Clojure with the following command:
+
+```bash
+$ brew install clojure/tools/clojure
+```
+
+### Prepare your OpenAI API Key
+
+Prepare your OpenAI API key by referring to the following information.
+
+https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key
+
+### Create a project
+
+Create a project with the following command and try using Ragtacts:
+
+```bash
+$ clojure -Ttools install com.github.seancorfield/clj-new '{:git/tag "v1.2.404"}' :as clj-new
+...
+$ clojure -Tclj-new app :name myname/ragapp
+$ cd ragapp
+```
+
+### Add Ragtacts dependency
 
 [![Clojars Project](https://img.shields.io/clojars/v/com.constacts/ragtacts.svg)](https://clojars.org/com.constacts/ragtacts)
 
-To use the latest release, add the following to your deps.edn (Clojure CLI)
 
-```
-com.constacts/ragtacts {:mvn/version "0.2.0"}
-```
-
-```clojure
-(ns example.core
-  (:require [ragtacts.core :as rg]))
-
-;; 1. Initially, you have one document.
-;; $ ls -1 ~/papers
-;; Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks.pdf
-(defn -main [& _]
-  (-> ["https://aws.amazon.com/what-is/retrieval-augmented-generation/" "~/papers"]
-      rg/app
-      (rg/sync 
-        ;; Callback that is called when a sync event occurs.
-        (fn [app event]
-          (println (:text (rg/chat app "What is RAG?")))
-          ;; 2. If you get an answer and add antoher document to ~/papers,
-          ;;    it will sync up and give you a new answer.
-          ;; $ ls -1 ~/papers
-          ;; RAPTOR.pdf
-          ;; Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks.pdf
-          ))))
-```
-
-### As a CLI
-
-- Query mode
-
-  You can use ragtacts in query mode with prompts and data sources.
-
-  ```
-  $ java -jar ./target/ragtacts-standalone.jar -p "Tell me about RAPTOR" -d ~/papers -d https://aws.amazon.com/what-is/retrieval-augmented-generation/
-  AI: RAPTOR is a novel tree-based retrieval system that enhances large language models with contextual information at different levels of abstraction. It utilizes recursive clustering and summarization techniques to create a hierarchical tree structure for synthesizing information from retrieval corpora. RAPTOR outperforms traditional retrieval methods and sets new benchmarks on question-answering tasks.
-  ```
-
-- Chat mode 
-
-  Ragtacts can also be used in interactive mode with the datasource and the -m chat option. 
-
-  ```
-  $ java -jar ./target/ragtacts-standalone.jar -m chat -d ~/papers -d https://aws.amazon.com/what-is/retrieval-augmented-generation/
-  Prompt: Tell me about RAG.    
-  AI: RAG stands for Retrieval-Augmented Generation. It allows developers to improve chat applications more efficiently by connecting generative models directly to live social media feeds or news sources. RAG also helps in presenting accurate information with source attribution, enhancing user trust in generative AI solutions. Additionally, it provides developers with more control over the information sources used by the generative models for generating responses. 
-  Prompt: Tell me about RAPTOR.
-  AI: RAPTOR is a tree-based retrieval model that selects nodes from different layers matching the detail level of a question, providing relevant and comprehensive information for downstream tasks. It consistently outperforms different retrievers when combined with them across various datasets in question-answering tasks. RAPTOR's performance has been evaluated across datasets such as NarrativeQA, QASPER, and QuALITY, where it excels in metrics like ROUGE-L, BLEU, and METEOR.
-  ```
-
-### As a API Server
-
-You can run ragtacts with the -m server option to use it as an API server. After running in server mode, open http://localhost:3000 with your browser to see the swagger documentation.
-
-### Advanced usage
-
-ragtacts is largely composed of Apps that can talk to Collections, which are data stores. A collection fetches and stores data from multiple datasources connected by connectors. 
-
-A Collection is composed of the following components
-
-* Connector: Fetches change history from a datasource.
-* DocumentLoader: Extracts text from a datasource and imports it into a document format.
-* Splitter: Slices the document into chunks for division and storage in the store.
-* Embedder: Embeds chunks for storage in a vector store.
-* VectorStore: A vector store for semantic search.
-
-The app consists of the following components.
-
-* Collection: Semantically searches for chunks similar to prompts.
-* PromptTemplate: Allows you to write pre-stored prompts.
-* Memory: Records conversations and answers based on previous conversations.
-* LLM: Use a language model to answer prompts.
-
-Ragtacts supports agents. There are examples in the `ragtacts.agent.base` namespace. 
-Currently, only the OpenAI model is available; the llama3 model is in the process of being created.
-
-### Components currently supported
-
-- Connector
-  | Name            | Description                                                                  |
-  |-----------------|------------------------------------------------------------------------------|
-  | FolderConnector | Watch the folder and get any changes.                                        |
-  | HttpConnector   | Watch a web resource over HTTP and fetch it back if it has changed.          |
-  | SqlConnector    | Periodically fetch changes to a SQL database table.                          |
-
-- DocumentLoader
-  | Name            | Description                                                                  |
-  |-----------------|------------------------------------------------------------------------------|
-  | HtmlLoader      | Extract text from an Html document.                                          |
-  | OfficeDocLoader | Extract text from documents such as pdf, doc, ppt, xls, etc.                 |
-  | TextLoader      | Replace plain text with documents.                                           |
-
-- Splitter
-  | Name              | Description                                                                |
-  |-------------------|----------------------------------------------------------------------------|
-  | RecursiveSplitter | Split text without breaking sentences in the middle.                       |
-
-- Embedder
-  | Name              | Description                                                                |
-  |-------------------|----------------------------------------------------------------------------|
-  | all-MiniLM-L6-v2  | HuggingFace sentence-transformers/all-MiniLM-L6-v2 embedding model         |
-  | OpenAI            | Use OpenAI embedding API.<br>To use it, you need to set the OPENAI_API_KEY environment variable. |
-  
-- VectorStore
-  | Name                | Description                                                              |
-  |---------------------|--------------------------------------------------------------------------|
-  | InMemoryVectorStore | In-memory vector database. Reads and saves as a JSON-type file.          |
-  | Milvus              | Uses the Milvus database                                                 |
-
-- Memory
-  | Name             | Description                                                                 |
-  |------------------|-----------------------------------------------------------------------------|
-  | WindowChatMemory | If the chat history is over a certain size, it clears the oldest content first. |
- 
-- LLM
-  | Name     | Description                                                                         |
-  |----------|-------------------------------------------------------------------------------------|
-  | LlamaCpp | Infer locally using the llama.cpp model. Support for downloading HuggingFace models |
-  | OpenAI   | Uses the OpenAI API.<br>To use it, you need to set the OPENAI_API_KEY environment variable. |
-
-- Tool
-  | Name         | Description                                                                     |
-  |--------------|---------------------------------------------------------------------------------|
-  | TavilySearch | [Tavily's Search API](https://tavily.com/) is a search engine built specifically for AI agents |
-  | Collection   | You can use Collection as a tool.                                               |
-
-### Component Configurations
-
-You can change component settings by giving the -f option when running ragtacts. The default 
-component settings are as follows
+Open the `deps.edn` file and add the Ragtacts library under the `:deps` key like this:
 
 ```edn
-{:splitter
- {:type :recursive
-  :params {:size 1000
-           :overlap 20}}
-
- :embedder
- {:type :all-mini-lm-l6-v2
-  :params {}}
-
- :vector-store
- {:type :in-memory
-  :params {}}
-
- :memory
- {:type :window
-  :params {:size 10}}
-
- :prompt-template
- {:type :default
-  :params {}}
-
-  :llm
- {:type :llama-cpp
-  :params {:model {:type :hugging-face
-                   :name "QuantFactory/Meta-Llama-3-8B-Instruct-GGUF"
-                   :file "Meta-Llama-3-8B-Instruct.Q4_K_M.gguf"
-                   :chat-template "{% set loop_messages = messages %}{% for message in loop ...
-                   :bos-token "<|begin_of_text|>"
-                   :eos-token "<|end_of_text|>"}
-           :n-ctx 8192}}}
+{:paths ["src" "resources"]
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        com.constacts/ragtacts {:mvn/version "0.3.0"}}
+ :aliases
+ {:run-m {:main-opts ["-m" "myname.ragapp"]}
+  :run-x {:ns-default myname.ragapp
+          :exec-fn greet
+          :exec-args {:name "Clojure"}}
+  :build {:deps {io.github.clojure/tools.build {:mvn/version "0.9.4"}}
+          :ns-default build}
+  :test {:extra-paths ["test"]
+         :extra-deps {org.clojure/test.check {:mvn/version "1.1.1"}
+                      io.github.cognitect-labs/test-runner
+                      {:git/tag "v0.5.1" :git/sha "dfb30dd"}}}}}
 ```
 
-### Create your own components
+The preparation is done. Now let's learn how to use Ragtacts!
 
-To create a component, you can implement the protocols found in the `ragtacts.[component].base` namespace. 
-For a description of the protocols, see the reference documentation. The following code implements 
-Embedder to create an OpenAIEmbbeder.
+## QuickStart
+
+To use the Ragtacts library, you need to `require` the `ractacts.core` namespace.
 
 ```clojure
-(ns ragtacts.embedder.open-ai
-  (:require [ragtacts.embedder.base :refer [Embedder make-embedding]]
-            [wkok.openai-clojure.api :as openai]))
-
-(defrecord OpenAIEmbedder [model]
-  Embedder
-  (embed [_ chunks]
-    (try
-      (let [texts (map :text chunks)
-            {:keys [data]} (openai/create-embedding {:model model
-                                                     :input texts})]
-        (mapv (fn [{:keys [embedding]} {:keys [doc-id metadata text]}]
-                (make-embedding doc-id
-                                text
-                                (map float embedding)
-                                metadata))
-              data
-              chunks))
-      (catch Exception e
-        (.printStackTrace e)))))
-
-(defn make-open-ai-embedder [{:keys [model]}]
-  (->OpenAIEmbedder model))
+(require '[ragtacts.core :refer :all])
 ```
 
-## License
+### Ask to an LLM (Large Language Model)
 
-Copyright © 2024 Constacts, Inc.
+Put the question you want to ask in the argument of the `ask` function.
 
-Available under the terms of the Eclipse Public License 1.0, see LICENSE.txt
+```clojure
+(ask "Hello!")
+;; [{:user "Hello!"} {:ai "Hi there! How can I assist you today?"}]
+```
+
+The result of `ask` will be in the form of a question and answer. Each item in the result list is 
+a map containing a role and content. The roles are `:user` and `:ai`. The last item with the LLM's 
+answer will be the value associated with the `:ai` key.
+
+The default model is OpenAI's gpt-4 but you can also ask questions to other models.
+
+```clojure
+(-> "Hello!"
+    (ask {:model "gpt-4-turbo"})
+    last
+    :ai)
+;; "Hi there! How can I assist you today?"
+```
+
+You can create question templates using the `prompt` function. The templates follow the Python 
+`str.format` template syntax.
+
+```clojure
+(-> "Tell me a {adjective} joke about {content}."
+    (prompt {:adjective "funny" :content "chickens"})
+    ask
+    last
+    :ai)
+;; "Sure, here's a classic one for you:\n\nWhy did the chicken go to the séance?\n\nTo ta..."
+```
+
+You can use prompts from the [Langchain Hub](https://smith.langchain.com/hub).
+
+```clojure
+(require '[ragtacts.prompt.langchain :as langchain])
+
+(-> (langchain/hub "rlm/rag-prompt") 
+    (prompt {:context "Ragtacts is an easy and powerful LLM library." 
+             :question "What is Ragtacts?"})
+    ask
+    last
+    :ai)
+;; "Ragtacts is an easy and powerful LLM library."
+```
+
+When asking a question, if you provide previous conversation context, the response will be based 
+on that conversation context.
+
+```clojure
+(-> [{:system "You are a wondrous wizard of math."}
+     {:user "2+2"}
+     {:ai "4"}
+     {:user "2+3"}
+     {:ai "5"}
+     {:user "What's the square of a triangle?"}]
+    ask
+    last
+    :ai)
+;; "The phrase \"square of a triangle\" is a ..."
+```
+
+Since the result of the `ask` function is conversation content, you can append the conversation 
+to the result and call the `ask` function again to continue asking questions based on the previous 
+conversation context.
+
+```clojure
+(-> (ask "Hi I am Ragtacts")
+    (conj "What is my name?")
+    ask
+    last
+    :ai)
+;; "You mentioned earlier that your name is Ragtacts. How can I help you today, Ragtacts?"
+```
+
+### Invoke a Clojure function in natural language
+
+You can call a Clojure function in natural language using the `ask` function. To let the LLM know 
+what the function does, you need to include metadata in the function as follows.
+
+```clojure
+(defn ^{:desc "Get the current weather in a given location"} get-current-weather
+    [^{:type "string" :desc "The city, e.g. San Francisco"} location]
+    (case (str/lower-case location)
+      "tokyo" {:location "Tokyo" :temperature "10" :unit "fahrenheit"}
+      "san francisco" {:location "San Francisco" :temperature "72" :unit "fahrenheit"}
+      "paris" {:location "Paris" :temperature "22" :unit "fahrenheit"}
+      {:location location :temperature "unknown"}))
+
+(-> "What 's the weather like in San Francisco, Tokyo, and Paris?"
+    (ask {:tools [#'get-current-weather]})
+    last
+    :ai)
+;; "Here is the current weather in the requested cities:\n\n1. **San Francisco**: 72°F\n2. **Tokyo**: 
+;;  10°F\n3. **Paris**: 22°F\n\nIt seems like the temperatures vary significantly across these cities!"  
+```
+
+In some cases, you need to use the result of calling a function as is. In such cases, you can use 
+the `:as` key with the `:values` option to receive the result in the following form.
+
+```clojure
+(-> "What 's the weather like in San Francisco, Tokyo, and Paris?"
+    (ask {:tools [#'get-current-weather] :as :values})
+    last
+    :ai)
+
+;; [{:get-current-weather {:location "San Francisco", :temperature "72", :unit "fahrenheit"}} 
+;;  {:get-current-weather {:location "Tokyo", :temperature "10", :unit "fahrenheit"}} 
+;;  {:get-current-weather {:location "Paris", :temperature "22", :unit "fahrenheit"}}]
+```
+
+The results are in a list because you can call the same function multiple times in one question. 
+Each item contains the result value with the function name as the key. If multiple functions are 
+included in `:tools`, the LLM can find and call the appropriate function, allowing you to know 
+which function was called by its key.
+
+### Getting more accurate answers with a vector database.
+
+A vector database stores data in vector format. Storing data as vectors allows for finding similar 
+data. Suppose you ask an LLM about the contents of a book. The LLM may not be able to provide 
+an accurate answer because it does not know the book's contents. However, if you include the book's 
+contents in the LLM prompt, the LLM can reference it to give an accurate answer. 
+
+The problem is that the size of the prompt the LLM can handle is limited. Using a vector database 
+can reduce the data to be included in the LLM prompt. By slicing the book's contents into smaller 
+parts and storing them in a vector database, you can find several pieces of data most similar 
+to the question and include them in the LLM prompt. This method is called 
+RAG (Retrieval-Augmented Generation).
+
+You can easily do RAG using Ragtacts. Let's first store and retrieve data in the vector database.
+
+```clojure
+(let [db (vector-store)]
+  (add db ["The new data outside of the LLM's original training data set is called external data."
+            "What Is RAG?"
+            "The next question may be—what if the external data becomes stale?"
+            "Retrieval-Augmented Generation (RAG) is the process of optimizing the output of a large language model."
+            "The next step is to perform a relevancy search."
+            "Recursive summarization as Context Summarization techniques provide a condensed view of documents"])
+  (search db "Tell me about RAG"))
+;; ("What Is RAG?" "Retrieval-Augmented Generation (RAG) is the process of optimizing the output of a large language 
+;;  model." "Recursive summarizat...)
+```
+
+The `vector-store` function creates an in-memory vector database. You can store documents in the 
+vector database using the `add` function and retrieve the most similar documents using the `search` 
+function, which by default fetches the 5 most similar documents in order. The number of documents 
+retrieved can be changed using the `top-k` option value.
+
+```clojure
+(let [db (vector-store)]
+  (add db ["The new data outside of the LLM's original training data set is called external data."
+            "What Is RAG?"
+            "The next question may be—what if the external data becomes stale?"
+            "Retrieval-Augmented Generation (RAG) is the process of optimizing the output of a large language model."
+            "The next step is to perform a relevancy search."
+            "Recursive summarization as Context Summarization techniques provide a condensed view of documents"])
+  (search db "Tell me about RAG" {:top-k 2}))
+;; ("What Is RAG?" "Retrieval-Augmented Generation (RAG) is the process of optimizing the output of a large language 
+;;  model.")
+```
+
+You can include additional information along with the documents to be stored as vectors, and filter 
+your search results using this additional information.
+
+```clojure
+(let [db (vector-store)]
+  (add db [{:text "What Is RAG?"
+              :metadata {:topic "RAG"}}
+            {:text "The next question may be—what if the external data becomes stale?"
+              :metadata {:topic "Tutorial"}}
+            {:text "The next step is to perform a relevancy search."
+              :metadata {:topic "Tutorial"}}])
+  (search db "Tell me about RAG" {:metadata {:topic "Tutorial"}}))
+;; ("The next question may be—what if the external data becomes stale?" "The next step is to..")
+```
+
+The `"What Is RAG?"` was most similar to `"Tell me about RAG"`, but since the search was filtered 
+to only include documents with `metadata` where the `topic` is `"Tutorial"`, `"What Is RAG?"` 
+did not appear in the results.
+
+If you add the `{:raw? true}` option to the `search` function, you can retrieve the stored vector 
+values and metadata in the result.
+
+```clojure
+(let [db (vector-store)]
+  (add db [{:text "What Is RAG?"
+              :metadata {:topic "RAG"}}
+            {:text "The next question may be—what if the external data becomes stale?"
+              :metadata {:topic "Tutorial"}}
+            {:text "The next step is to perform a relevancy search."
+              :metadata {:topic "Tutorial"}}])
+  (search db "Tell me about RAG" {:metadata {:topic "Tutorial"}
+                                  :raw? true}))
+;; [{:text "The next step is to perform a relevancy search." 
+;;   :vector [-0.002841026 0.015938155 ...]
+;;   :metadata {:topic "Tutorial"}} ...]
+```
+
+You can extract text from web pages or documents (e.g., PDF, DOC, XLS, PPT) and store it in the 
+vector database for searching.
+
+```clojure
+(require '[ragtacts.loader.web :as web])
+
+(let [db (vector-store)
+      text (web/get-text "https://aws.amazon.com/what-is/retrieval-augmented-generation/")]
+  (add db [text])
+  (search db "What is RAG?"))
+
+(require '[ragtacts.loader.doc :as doc])
+
+(let [db (vector-store)
+      text (doc/get-text "~/papers/RAPTOR.pdf")]
+  (add db [text])
+  (search db "What is RAPTOR?"))
+```
+
+As mentioned earlier, you can split the text and store it in the vector database. If the text passed 
+to the `add` function is long, it will be split and stored in the vector database. The default value 
+is 500 characters. The text is not cut exactly at 500 characters to avoid splitting in the middle of 
+a sentence or word. You can change the character limit using the `:splitter` option in the 
+`vector-store` function. You need to provide the `:size` and `:overlap` options. The `:overlap` 
+option specifies the overlap size to ensure text is not cut off abruptly.
+
+```clojure
+(let [db (vector-store {:splitter {:size 100 :overlap 10}})
+      text (doc/get-text "~/papers/RAPTOR.pdf")]
+  (add db [text])
+  (search db "What is RAPTOR?"))
+```
+
+Now, let's ask the LLM based on the content in the vector database. We need to concatenate 
+the retrieved content from the vector database into a string, incorporate it into an appropriate 
+prompt, and then query the LLM. For the example, we will use the `rlm/rag-prompt` from 
+the LangChain Hub as the prompt template.
+
+```clojure
+(let [db (vector-store)
+        text (web/get-text "https://aws.amazon.com/what-is/retrieval-augmented-generation/")
+        rag-prompt (langchain/hub "rlm/rag-prompt")
+        question "What is RAG?"]
+    (add db [text])
+    (-> (ask (prompt rag-prompt {:context (str/join "\n" (search db question))
+                                 :question question}))
+        last
+        :ai))
+```
+
+Ragtacts has a `watch` function that can update the vector database with the changed content when 
+the content on a web page or in a folder is updated. This function allows you to keep the data 
+in the vector database synchronized with the changing data.
+
+```clojure
+(def web-wather
+  (web/watch {:url "https://aws.amazon.com/what-is/retrieval-augmented-generation/"
+              :interval 1000}
+              (fn [change-log]
+                ;; {:type :create :text "..."}
+                (println change-log))))
+
+(web/stop-watch web-wather)
+
+;; WIP
+(def folder-wather
+  (doc/watch {:path "~/papers"}
+              (fn [change-log]
+                (println change-log))))
+
+(doc/stop-watch folder-wather)
+```
+
+## Using Ragtacts as CLI
+
+Ragtacts can also be used as a CLI. Download the `ragtacts.jar` file from the 
+[Releases](https://github.com/constacts/ragtacts/releases/) page, and run it with Java to allow 
+querying an LLM based on web pages or documents.
+
+```bash
+$ java -jar target/ragtacts-standalone.jar -p "What is RAG?" -d https://aws.amazon.com/what-is/retrieval-augmented-generation/
+AI: RAG, or Retrieval-Augmented Generation, is a process that enhances the output of a large language model (LLM) by incorporating an information retrieval component. This component pulls relevant information from an external knowledge base and provides it to the LLM, enabling it to generate more accurate responses. This approach offers organizations better control over the generated text output and improves the overall quality of the responses. 
+```
+
+By using the `chat` mode, you can ask questions interactively.
+
+```bash
+$ java -jar target/ragtacts-standalone.jar -m chat -d https://aws.amazon.com/what-is/retrieval-augmented-generation/
+Prompt: What is RAG?
+AI: RAG, or Retrieval-Augmented Generation, is a process that optimizes the output of a large language model by first retrieving information from an external, authoritative knowledge base before generating a response. This allows the model to use both its training data and the new information to create more accurate and reliable answers. This approach gives organizations greater control over generated text and helps improve the quality of the responses. 
+Prompt:
+```
+
+## Using Ragtacts as API Server
+
+You can also use Ragtacts as an API server. Enter the following command and then access 
+[http://localhost:3000](http://localhost:3000). The API is compatible with the OpenAI 
+[Chat](https://platform.openai.com/docs/api-reference/chat) API.
+
+```bash
+$ java -jar target/ragtacts-standalone.jar -m server -d https://aws.amazon.com/what-is/retrieval-augmented-generation/
+```
+
+![ServerMode](./doc/images/server.png)

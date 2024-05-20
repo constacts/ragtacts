@@ -1,9 +1,49 @@
 (ns ragtacts.llm.base)
 
-(defrecord Answer [text tool-calls])
+(defmulti ask
+  "Returns the answer to the question you asked the LLM.
+   
+   Args:
+   - q: The string or messages seq question you want to ask the LLM. If it were a sequence of 
+    messages, the items would have the following keys and string values: `:system`, `:user`, `:ai`.
+     - [{:system \"You are a helpful assistant.\"}, {:user \"Hello!\"}]
+       
+   - params: A map of parameters to pass to the LLM.
+     - `:type`: The type of LLM to use. Defaults to :open-ai.
+     - `:tools`: List of function Vars to use as tools for the LLM.
+     - `:as`: If you use `:values` in the `:as` option when tool is invoked with the tools
+              option, it will return the resulting list of following map of tool calls:
+        - key: function name
+        - value: result of the function call
 
-(defn make-answer [params]
-  (map->Answer params))
+   Returns:
+   - String: The answer to the question you asked the LLM.
 
-(defprotocol Llm
-  (query [this args]))
+   Example:
+   ```clojure
+   (ask \"Hello!\")
+
+   (ask \"Hello!\" {:type :open-ai})
+
+   (ask \"Hello!\" {:type :open-ai :model \"gpt-4o\"})
+
+   (ask [{:system \"You are a helpful assistant.\"}, {:user \"Hello!\"}])
+
+   ;; tools
+   (defn ^{:desc \"Get the current weather in a given location\"} get-current-weather 
+     [^{:type \"string\" :desc \"The city and state, e.g. San Francisco, CA\"} location] 
+     ...))
+                                                        
+   (ask \"What's the weather like in San Francisco, Tokyo, and Paris?\" 
+        {:tools [#'get-current-weather]})
+   ```
+   "
+  (fn [q & {:keys [type]}] type))
+
+(defmethod ask :default
+  ([q]
+   (ask q {:type :open-ai}))
+  ([q {:keys [type] :as params}]
+   (ask q (if type
+            params
+            (assoc params :type :open-ai)))))

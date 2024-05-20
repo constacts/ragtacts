@@ -1,9 +1,10 @@
 (ns ragtacts.util
-  (:require [hato.client :as hc]
-            [hato.middleware :as hm]
-            [clojure.java.io :as io :refer [output-stream]])
-  (:import [org.apache.commons.io.input CountingInputStream]
-           [me.tongfei.progressbar ProgressBar]))
+  (:require [clojure.java.io :as io :refer [output-stream]]
+            [clojure.string :as str]
+            [hato.client :as hc]
+            [hato.middleware :as hm])
+  (:import [me.tongfei.progressbar ProgressBar]
+           [org.apache.commons.io.input CountingInputStream]))
 
 (defn wrap-downloaded-bytes-counter
   [client]
@@ -39,3 +40,28 @@
               (.stepTo progress (.getByteCount counter))
               (recur))))))
     (println)))
+
+(defn f-string
+  "Python-like f-string
+   
+   Example:
+   ```clojure
+   (f-string \"Hello, {name}!\" {:name \"world\"})
+   ;; => \"Hello, world!\"
+   ```
+   "
+  [s ctx]
+  (let [result (reduce (fn [s [k v]]
+                         (str/replace s (re-pattern (str "\\{\\s*" (name k) "\\s*\\}")) (str v)))
+                       s
+                       ctx)]
+    (if-let [[_ missing-key] (re-find #"\{\s*([^}]+)\s*\}" result)]
+      (let [k (str/trim missing-key)]
+        (throw (ex-info (str "Missing key: " k) {:key k})))
+      result)))
+
+(comment
+  (f-string "Hello, {lang} { name }!" {:lang "Clojure"
+                                       :name "world"})
+  ;;
+  )

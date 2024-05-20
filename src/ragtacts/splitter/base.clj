@@ -1,18 +1,13 @@
-(ns ragtacts.splitter.base
-  (:require [clj-commons.humanize :as h]))
+(ns ragtacts.splitter.base)
 
-(defrecord Chunk [doc-id text metadata])
+(defmulti split
+  "Split the documents into chunks.
+   
+   Args:
+   - splitter: A map with the following keys:
+     - `:type`: A keyword with the splitter type.
+   - docs: A list of documents.
 
-(defn make-chunk
-  ([text]
-   (make-chunk nil text))
-  ([doc-i text]
-   (make-chunk doc-i text {}))
-  ([doc-i text metadata]
-   (->Chunk doc-i text metadata)))
-
-(defmethod print-method Chunk [chunk ^java.io.Writer w]
-  (.write w (str (into {} (update chunk :text #(h/truncate % 30))))))
-
-(defprotocol Splitter
-  (split [this doc]))
+   Returns:
+    - A list of chunks."
+  (fn [{:keys [type]} docs] type))

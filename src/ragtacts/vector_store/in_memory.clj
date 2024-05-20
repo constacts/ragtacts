@@ -1,81 +1,80 @@
 (ns ragtacts.vector-store.in-memory
-  (:require [ragtacts.splitter.base :refer [make-chunk]]
-            [ragtacts.embedder.base :refer [make-embedding]]
-            [ragtacts.vector-store.base :refer [delete-by-id
-                                                VectorStore]]
-            [clojure.walk :refer [stringify-keys keywordize-keys]])
+  (:require [clojure.walk :refer [stringify-keys]]
+            [ragtacts.embedding.base :refer [embed text->doc]]
+            [ragtacts.vector-store.base :refer [add search]]
+            [ragtacts.splitter.base :refer [split]])
   (:import [dev.langchain4j.data.document Metadata]
            [dev.langchain4j.data.embedding Embedding]
            [dev.langchain4j.data.segment TextSegment]
-           [dev.langchain4j.store.embedding EmbeddingSearchRequest]
+           [dev.langchain4j.store.embedding
+            EmbeddingSearchRequest
+            EmbeddingSearchResult
+            EmbeddingMatch]
            [dev.langchain4j.store.embedding.inmemory InMemoryEmbeddingStore]
+           [dev.langchain4j.store.embedding.filter MetadataFilterBuilder]
            [java.util HashMap]))
 
-(def ^:private db-file "db.json")
-
-(defn- embedding->text-segment [{:keys [doc-id
-                                        text
-                                        metadata]}]
-  (let [metadata (if doc-id
-                   (assoc metadata :id doc-id)
+(defn- doc->text-segment [{:keys [id
+                                  text
+                                  metadata]}]
+  (let [metadata (if id
+                   (assoc metadata :id id)
                    metadata)]
     (TextSegment. text (if metadata
                          (Metadata/from (HashMap. (stringify-keys metadata)))
                          (Metadata.)))))
 
-(defn- text-segment->chunk [text-segment]
-  (let [metadata (.metadata text-segment)]
-    (make-chunk (.get metadata "id") (.text text-segment) (-> (into {} (.asMap metadata))
-                                                              keywordize-keys
-                                                              (dissoc :id)))))
+(defn in-memory-vector-store
+  "Return an in-memory vector store."
+  []
+  {:type :in-memory
+   :store (InMemoryEmbeddingStore.)})
 
-(defn- get-private [obj field-name]
-  (let [field (.getDeclaredField (class obj) field-name)]
-    (.setAccessible field true)
-    (.get field obj)))
-
-(defrecord InMemoryVectorStore [store]
-  VectorStore
-  (insert [_ embeddings]
+(defmethod add :in-memory [{:keys [embedding splitter db]} texts-or-docs]
+  (let [docs (map text->doc texts-or-docs)
+        chunked-docs (split splitter docs)
+        embeddings (embed embedding (map :text chunked-docs))
+        ^InMemoryEmbeddingStore store (:store db)]
     (.addAll store
-             (map (fn [{:keys [vectors]}]
+             (map (fn [vectors]
                     (Embedding. (float-array (map float vectors))))
                   embeddings)
-             (map embedding->text-segment embeddings))
-    (.serializeToFile store db-file))
+             (map doc->text-segment chunked-docs))))
 
-  (delete-by-id [_ id]
-    (let [entries (get-private store "entries")]
-      (doseq [entry entries]
-        (let [embedded (get-private entry "embedded")]
-          (when (= (.get (.metadata embedded) "id") id)
-            (.remove entries entry))))
-      (.serializeToFile store db-file)))
+(defn- ->filter [metadata]
+  (when metadata
+    (reduce
+     (fn [filter [k v]]
+       (if filter
+         (.and filter (.isEqualTo (MetadataFilterBuilder. (name k)) v))
+         (.isEqualTo (MetadataFilterBuilder. (name k)) v)))
+     nil
+     metadata)))
 
-  (search [_ embeddings {:keys [top-k expr]}]
-    (let [embedding (Embedding. (float-array (map float (:vectors (first embeddings)))))
-          result (.search store
-                          (EmbeddingSearchRequest.
-                           embedding
-                           (int (or top-k 5))
-                           0.0
-                           nil))]
-      (map #(text-segment->chunk (.embedded %)) (.matches result)))))
-
-(defn make-in-memory-vector-store [_]
-  (let [store (try (InMemoryEmbeddingStore/fromFile db-file)
-                   (catch Exception _))]
-    (->InMemoryVectorStore (or store (InMemoryEmbeddingStore.)))))
+(defmethod search :in-memory
+  ([db query]
+   (search db query {}))
+  ([{:keys [embedding db]} query {:keys [top-k metadata raw?]}]
+   (let [embeddings (embed embedding [query])
+         embedding (Embedding. (float-array (map float (first embeddings))))
+         ^InMemoryEmbeddingStore store (:store db)
+         filter (->filter metadata)
+         ^EmbeddingSearchResult result (.search store
+                                                (EmbeddingSearchRequest.
+                                                 embedding
+                                                 (int (or top-k 5))
+                                                 0.0
+                                                 filter))]
+     (map
+      (fn [^EmbeddingMatch match]
+        (if raw?
+          {:text (.text (.embedded match))
+           :vector (map float (.vector (.embedding match)))
+           :metadata (into {} (.asMap (.metadata (.embedded match))))}
+          (.text (.embedded match))))
+      (.matches result)))))
 
 (comment
-
-  (let [s (make-in-memory-vector-store nil)]
-    #_(insert s
-              [(make-embedding "1" "hello" [1 2 3] {:a 1})
-               (make-embedding "2" "world" [4 5 6] {:a 1})
-               (make-embedding "3" "foo" [7 8 9] {:a 1})
-               (make-embedding "4" "bar" [10 11 12] {:a 1})])
-    #_(search s [(make-embedding [100 200 300])] {})
-    (delete-by-id s "4"))
-  ;; 
+  (->filter {:a 1})
+  ;;
   )

@@ -34,3 +34,5 @@ last-change-*.edn
 macos-package.sh
 /models
 *.log
+.shadow-cljs
+cljs-runtime
