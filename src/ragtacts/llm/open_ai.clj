@@ -1,8 +1,11 @@
 (ns ragtacts.llm.open-ai
-  (:require [cheshire.core :as json]
+  (:require [clojure.java.io :as io]
+            [cheshire.core :as json]
             [ragtacts.llm.base :refer [ask]]
-            [wkok.openai-clojure.api :as openai]))
-
+            [wkok.openai-clojure.api :as openai])
+  (:import [java.io ByteArrayOutputStream InputStream]
+           [java.util Base64]
+           [org.apache.tika Tika]))
 
 (defn- question->msgs [q]
   (cond
@@ -47,13 +50,14 @@
     (-> (openai/create-chat-completion (if (seq tools)
                                          (assoc params :tools (map tool->function tools))
                                          params)
-                                       {:trace (fn [request response]
-                                                ;;  (println "Request:")
-                                                ;;  (println (:body request))
-                                                ;;  (println)
-                                                ;;  (println "Response:")
-                                                ;;  (println (:body response))
-                                                             ;; (log/debug request)
+                                       {:throw-exceptions? false
+                                        :trace (fn [request response]
+                                                ;; (println "Request:")
+                                                ;; (println (:body request))
+                                                ;; (println)
+                                                ;; (println "Response:")
+                                                ;; (println (:body response))
+                                                ;; (log/debug request)
                                                  )})
         :choices
         first
@@ -101,6 +105,42 @@
 
 (defmethod ask :open-ai [q params]
   (ask-open-ai q params))
+
+(defn- file->bytes [input-stream]
+  (with-open [xin input-stream
+              xout (ByteArrayOutputStream.)]
+    (io/copy xin xout)
+    (.toByteArray xout)))
+
+(defn with-images
+  "Return a message with an image.
+   
+   Args:
+    - text: The prompt to ask the user.
+    - images: A list of image URLs or input streams.
+   
+   Example:
+   ```clojure
+   (->
+     (with-images \"What are in these images? Is there any difference between them?\"
+       \"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg\"
+       (io/input-stream \"/tmp/sample.png\"))
+     ask
+     last
+     :ai)
+   ```"
+  [text & images]
+  (let [image-urls (map (fn [image]
+                          (if (instance? InputStream image)
+                            (let [bytes (file->bytes image)
+                                  mime-type (.detect (Tika.) bytes)
+                                  base64 (.encodeToString (Base64/getEncoder) bytes)]
+                              (str "data:" mime-type ";base64," base64))
+                            image)) images)]
+    [{:user
+      (cons {:type "text" :text text}
+            (map (fn [image-url]
+                   {:type "image_url" :image_url {:url image-url}}) image-urls))}]))
 
 (comment
 

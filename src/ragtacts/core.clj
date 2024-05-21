@@ -3,7 +3,7 @@
             [clojure.string :as str]
             [ragtacts.embedding.open-ai :refer [open-ai-embedding]]
             [ragtacts.llm.base :as llm]
-            [ragtacts.llm.open-ai]
+            [ragtacts.llm.open-ai :as open-ai]
             [ragtacts.loader.doc :as doc]
             [ragtacts.loader.web :as web]
             [ragtacts.util :refer [f-string]]
@@ -17,6 +17,8 @@
 ;; llm
 
 (def ask llm/ask)
+
+(def with-images open-ai/with-images)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; prompt 

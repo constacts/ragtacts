@@ -118,6 +118,17 @@ Ragtacts 라이브러리를 쓰려면 `ractacts.core` 네임스페이스를 `req
 ;; "Ragtacts is an easy and powerful LLM library."
 ```
 
+멀티 모달을 지원하는 [모델](https://platform.openai.com/docs/models)을 사용한다면 이미지에 대해 물어볼 수도 있습니다.
+
+```clojure
+(->
+   (ask (with-images "What are in these images? Is there any difference between them?"
+     "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+     (io/input-stream "/tmp/sample.png")))
+   last
+   :ai)
+```
+
 질문 할 때 대화 내용을 조금 입력하면 대화 내용을 바탕으로 답을 줍니다.
 
 ```clojure

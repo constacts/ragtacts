@@ -121,6 +121,18 @@ You can use prompts from the [Langchain Hub](https://smith.langchain.com/hub).
 ;; "Ragtacts is an easy and powerful LLM library."
 ```
 
+If you use a model that supports [multimodal](https://platform.openai.com/docs/models) inputs, 
+you can also ask questions about images.
+
+```clojure
+(->
+   (ask (with-images "What are in these images? Is there any difference between them?"
+     "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+     (io/input-stream "/tmp/sample.png")))
+   last
+   :ai)
+```
+
 When asking a question, if you provide previous conversation context, the response will be based 
 on that conversation context.
 
