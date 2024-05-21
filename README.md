@@ -390,3 +390,13 @@ $ java -jar target/ragtacts-standalone.jar -m server -d https://aws.amazon.com/w
 ```
 
 ![ServerMode](./doc/images/server.png)
+
+## Contributing
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request.
+
+## License
+
+Copyright © 2024 Constacts, Inc.
+
+Distributed under the Eclipse Public License, the same as Clojure.

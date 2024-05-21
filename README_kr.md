@@ -366,3 +366,13 @@ $ java -jar target/ragtacts-standalone.jar -m server -d https://aws.amazon.com/w
 ```
 
 ![ServerMode](./doc/images/server.png)
+
+## 참여하기
+
+Pull Request를 보내기 전에 [CONTRIBUTING.md](CONTRIBUTING.md) 문서를 읽어보세요.
+
+## License
+
+Copyright © 2024 Constacts, Inc.
+
+Distributed under the Eclipse Public License, the same as Clojure.
