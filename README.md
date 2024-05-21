@@ -21,48 +21,25 @@ And install Clojure with the following command:
 $ brew install clojure/tools/clojure
 ```
 
-### Prepare your OpenAI API Key
+### Clojure REPL with ragtacts
 
-Prepare your OpenAI API key by referring to the following information.
+Create a `deps.edn` file and insert the following contents.
 
-https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key
+```clojure
+{:deps
+ {com.constacts/ragtacts {:mvn/version "0.3.1"}}}
+```
 
-### Create a project
-
-Create a project with the following command and try using Ragtacts:
+Next, run the Clojure REPL with the following command. Since ragtacts uses OpenAI as the default 
+LLM model, an OpenAI API key is required. Refer to the 
+[OpenAI documentation](https://platform.openai.com/docs/quickstart/step-2-set-up-your-api-key) to
+prepare your key.
 
 ```bash
-$ clojure -Ttools install com.github.seancorfield/clj-new '{:git/tag "v1.2.404"}' :as clj-new
-...
-$ clojure -Tclj-new app :name myname/ragapp
-$ cd ragapp
+$ OPENAI_API_KEY=sk-xxxx clj
+Clojure 1.11.3
+user=> 
 ```
-
-### Add Ragtacts dependency
-
-[![Clojars Project](https://img.shields.io/clojars/v/com.constacts/ragtacts.svg)](https://clojars.org/com.constacts/ragtacts)
-
-
-Open the `deps.edn` file and add the Ragtacts library under the `:deps` key like this:
-
-```edn
-{:paths ["src" "resources"]
- :deps {org.clojure/clojure {:mvn/version "1.11.1"}
-        com.constacts/ragtacts {:mvn/version "0.3.1"}}
- :aliases
- {:run-m {:main-opts ["-m" "myname.ragapp"]}
-  :run-x {:ns-default myname.ragapp
-          :exec-fn greet
-          :exec-args {:name "Clojure"}}
-  :build {:deps {io.github.clojure/tools.build {:mvn/version "0.9.4"}}
-          :ns-default build}
-  :test {:extra-paths ["test"]
-         :extra-deps {org.clojure/test.check {:mvn/version "1.1.1"}
-                      io.github.cognitect-labs/test-runner
-                      {:git/tag "v0.5.1" :git/sha "dfb30dd"}}}}}
-```
-
-The preparation is done. Now let's learn how to use Ragtacts!
 
 ## QuickStart
 
