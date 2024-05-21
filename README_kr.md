@@ -7,7 +7,7 @@ Ragtacts로 쉽게 LLM에게 물어보세요!
 - [English](./README.md)
 - [한국어](./README_kr.md)
 
-- [ractacts cljdoc](https://cljdoc.org/d/com.constacts/ragtacts/0.3.0/doc/readme)
+- [ractacts cljdoc](https://cljdoc.org/d/com.constacts/ragtacts/0.3.1/doc/readme)
 
 ## 준비물
 
@@ -47,7 +47,7 @@ $ cd ragapp
 ```edn
 {:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.11.1"}
-        com.constacts/ragtacts {:mvn/version "0.3.0"}}
+        com.constacts/ragtacts {:mvn/version "0.3.1"}}
  :aliases
  {:run-m {:main-opts ["-m" "myname.ragapp"]}
   :run-x {:ns-default myname.ragapp
