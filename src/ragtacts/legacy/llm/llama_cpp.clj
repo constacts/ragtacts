@@ -68,7 +68,7 @@
 (first (first (re-seq #".*(\[.*?\]).*"
                       "[{name \":\" langsmith_search \",\" arguments \":{\" query \":\" how can langsmith help with testing \"}}]\n\n{----------------")))
 
-(defn- parse-fn-calls-ouput [result]
+(defn- parse-fn-calls-output [result]
   (let [root-array (->> result
                         (re-seq #".*(\[.*?\]).*")
                         first
@@ -95,7 +95,7 @@
                          (.setMiroStat MiroStat/V2)
                          (.setStopStrings (into-array String [eos-token])))
           result (.complete model infer-params)
-          fn-call (parse-fn-calls-ouput result)]
+          fn-call (parse-fn-calls-output result)]
       (make-answer {:text (when-not fn-call
                             result)
                     :tool-calls (when fn-call
