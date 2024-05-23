@@ -10,6 +10,10 @@
        
    - params: A map of parameters to pass to the LLM.
      - `:type`: The type of LLM to use. Defaults to :open-ai.
+     - `max-tokens`: The maximum number of tokens that can be generated in the chat completion.
+     - `temperature`: What sampling temperature to use, between 0 and 2.
+     - `top-p`: An alternative to sampling with temperature, called nucleus sampling, 
+                where the model considers the results of the tokens with top-p probability mass. 
      - `:tools`: List of function Vars to use as tools for the LLM.
      - `:as`: If you use `:values` in the `:as` option when tool is invoked with the tools
               option, it will return the resulting list of following map of tool calls:
@@ -47,3 +51,4 @@
    (ask q (if type
             params
             (assoc params :type :open-ai)))))
+

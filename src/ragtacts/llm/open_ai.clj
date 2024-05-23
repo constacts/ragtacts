@@ -71,11 +71,14 @@
                                (json/parse-string arguments true))))
                 %)))
 
-(defn- ask-open-ai [q {:keys [model tools as]}]
+(defn- ask-open-ai [q {:keys [model tools as max-tokens temperature top-p]}]
   (let [msgs (question->msgs q)
         result (chat-completion {:model model
                                  :msgs msgs
-                                 :tools tools})]
+                                 :tools tools
+                                 :max_tokens max-tokens
+                                 :top_p top-p
+                                 :temperature temperature})]
     (if (seq tools)
       (let [parsed-result (parse-arguments result)
             fn-results (map (fn [{:keys [id function]}]
@@ -143,6 +146,7 @@
                    {:type "image_url" :image_url {:url image-url}}) image-urls))}]))
 
 (comment
+
 
   ;;
   )
