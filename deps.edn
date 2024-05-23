@@ -22,7 +22,9 @@
         de.kherud/llama {:mvn/version "3.0.1"}
         me.tongfei/progressbar {:mvn/version "0.10.0"}
         com.hubspot.jinjava/jinjava {:mvn/version "2.7.2"}
-        org.apache.tika/tika-core {:mvn/version "2.9.2"}}
+        org.apache.tika/tika-core {:mvn/version "2.9.2"}
+        org.apache.pdfbox/pdfbox {:mvn/version "2.0.31"}
+        org.apache.pdfbox/pdfbox-tools {:mvn/version "2.0.31"}}
  :aliases
  {:build {:deps {io.github.clojure/tools.build {:mvn/version "0.9.4"}
                  slipset/deps-deploy {:mvn/version "0.2.1"}}
