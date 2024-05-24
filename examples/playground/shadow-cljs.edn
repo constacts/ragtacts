@@ -1,12 +1,12 @@
 {:builds
  {:dev  {:target :browser
-         :devtools {:loader-mode :default, :watch-dir "resources/public/ragtacts_example"}
-         :output-dir "resources/public/ragtacts_example/js"
+         :devtools {:loader-mode :default, :watch-dir "resources/public"}
+         :output-dir "resources/public/js"
          :asset-path "/js"
          :modules {:main {:entries [dev] :init-fn dev/start!}}
          :build-hooks [(hyperfiddle.electric.shadow-cljs.hooks/reload-clj)]}
   :prod {:target :browser
-         :output-dir "resources/public/ragtacts_example/js"
+         :output-dir "resources/public/js"
          :asset-path "/js"
          :modules {:main {:entries [prod] :init-fn prod/start!}}
          :module-hash-names true}}}

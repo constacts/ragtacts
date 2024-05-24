@@ -1,4 +1,4 @@
-(ns ragtacts.example.fullstack.main
+(ns ragtacts.playground.main
   (:import [hyperfiddle.electric Pending]
            #?(:clj [java.util Base64])
            #?(:clj [java.io ByteArrayInputStream]))

@@ -1,3 +1,3 @@
-# Introduction to ragtacts/fullstack
+# Introduction to ragtacts/playground
 
 TODO: write [great documentation](http://jacobian.org/writing/what-to-write/)

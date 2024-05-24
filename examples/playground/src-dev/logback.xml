@@ -11,6 +11,6 @@
     </root>
 
     <!-- org.eclipse.jetty, datomic -->
-    <logger name="fullstack" level="DEBUG" additivity="false"><appender-ref ref="STDOUT" /></logger>
+    <logger name="playground" level="DEBUG" additivity="false"><appender-ref ref="STDOUT" /></logger>
     <logger name="org.eclipse.jetty.server" level="WARN" additivity="false"><appender-ref ref="STDOUT" /></logger>
 </configuration>

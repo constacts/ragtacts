@@ -19,13 +19,6 @@
                         io.github.clojure/tools.build {:mvn/version "0.9.6"
                                                        :exclusions  [com.google.guava/guava
                                                                      org.slf4j/slf4j-nop]}}}
-  ;; :run-m {:main-opts ["-m" "ragtacts.fullstack"]}
-  ;; :run-x {:ns-default ragtacts.fullstack
-  ;;         :exec-fn greet
-  ;;         :exec-args {:name "Clojure"}}
-  ;; :build {:deps {io.github.clojure/tools.build
-  ;;                {:mvn/version "0.10.3"}}
-  ;;         :ns-default build}
   :test {:extra-paths ["test"]
          :extra-deps {org.clojure/test.check {:mvn/version "1.1.1"}
                       io.github.cognitect-labs/test-runner
