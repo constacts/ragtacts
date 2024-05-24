@@ -5,14 +5,14 @@
         ring/ring                      {:mvn/version "1.11.0"}
         org.clojure/tools.logging      {:mvn/version "1.2.4"}
         ch.qos.logback/logback-classic {:mvn/version "1.4.14"}
-        com.constacts/ragtacts         {:mvn/version "0.3.0"}}
+        com.constacts/ragtacts         {:mvn/version "0.3.1"}}
  :aliases
  {:dev {:extra-paths ["src-dev"]
         :extra-deps  {thheller/shadow-cljs          {:mvn/version "2.26.2"}
                       io.github.clojure/tools.build {:mvn/version "0.9.6"
                                                      :exclusions  [com.google.guava/guava
                                                                    org.slf4j/slf4j-nop]}}}
-  :proc {}
+  :prod  {:extra-paths ["src-prod"]}
   :build {:extra-paths ["src-build"]
           :ns-default  build
           :extra-deps  {thheller/shadow-cljs          {:mvn/version "2.26.2"}

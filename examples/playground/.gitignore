@@ -26,3 +26,5 @@
 /checkouts
 /classes
 /target
+electric-manifest.edn
+resources/public/js/

@@ -56,7 +56,12 @@
     (log/info `uberjar "included aliases:" aliases)
     (b/uber {:class-dir class-dir
              :uber-file jar-name
-             :basis     (b/create-basis {:project "deps.edn" :aliases aliases})})
+             :basis     (b/create-basis {:project "deps.edn" :aliases aliases})
+             :exclude ["LICENSE"
+                       #"^META-INF/license/LICENSE\.boringssl\.txt$"
+                       #"^META-INF/license/LICENSE\.mvn-wrapper\.txt$"
+                       #"^META-INF/license/LICENSE\.aix-netbsd\.txt$"
+                       #"^META-INF/license/LICENSE\.tomcat-native\.txt$"]})
     (log/info jar-name)))
 
 ;; clj -X:build:prod build-client
