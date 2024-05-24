@@ -43,57 +43,34 @@
        (try
          ;; Container
          (dom/div
+          (dom/props {:class "mt-12 mx-44 flex flex-col gap-5"})
           (dom/h1
-           (dom/style {:font-size "24px"
-                       :margin-bottom "20px"})
            (dom/text
             "Ragtacts"))
-          (dom/style {:margin-top "50px"
-                      :margin-left "180px"
-                      :margin-right "180px"
-                      :display "flex"
-                      :flex-direction "column"
-                      :gap "20px"})
           ;; Chat
           (dom/div
-           (dom/style {:display "flex"
-                       :flex-direction "column"
-                       :gap "20px"})
+           (dom/props {:class "flex flex-col gap-5"})
            (e/server
             (e/for-by identity [msg msgs] ; chat renders bottom up
                       (when msg
                         (e/client
                          (dom/div
-                          (dom/style {:display "flex"
-                                      :justify-content "space-between"
-                                      :gap "20px"
-                                      :visibility (if (nil? msg)
-                                                    "hidden"
-                                                    "visible")})
+                          (dom/props {:class "flex justify-between gap-5"})
                           (let [[role content] (first msg)]
-                            (dom/div (dom/style {:width "80px"
-                                                 :flex-shrink 0})
+                            (dom/div (dom/props {:class "w-20 shrink-0"})
                                      (dom/text (name role)))
-                            (dom/div (dom/style {:width "100%"})
+                            (dom/div (dom/props {:class "w-full"})
                                      (dom/text content)))))))))
 
           ;; Chat Input
           (dom/div
-           (dom/style {:display "flex"
-                       :align-items "center"
-                       :gap "20px"})
+           (dom/props {:class "flex flex-row gap-5 items-center"})
            (dom/div
-            (dom/style {:width "80px"
-                        :flex-shrink 0})
+            (dom/props {:class "shrink-0 w-20"})
             (dom/text "user"))
            (dom/input
-            (dom/props {:style {:width "100%"
-                                :padding "8px"
-                                :border-radius "10px"
-                                :border "1px solid #000"
-                                :font-size "18px"}
-                        :placeholder "What can I help you with?"
-                        :maxlength 100})
+            (dom/props {:class "w-full p-2 text-sm border rounded-lg"
+                        :placeholder "What can I help you with?"})
             (dom/on "keydown"
                     (e/fn [e]
                       (when (= "Enter" (.-key e))
@@ -114,44 +91,33 @@
                            #_(swap! !msgs #(cons v (take 9 %))))
                           (set! (.-value dom/node) "")))))))
 
-          (dom/hr (dom/style {:margin-top "40px"
-                              :width "100%"}))
+          (dom/hr
+           (dom/props {:class "mt-10 w-full"}))
           ;; File List
           (dom/div
-           (dom/style {:margin-top "40px"
-                       :display "flex"
-                       :flex-direction "column"
-                       :gap "40px"})
+           (dom/props {:class "mt-10 flex flex-col gap-5"})
            (dom/div
-            (dom/style {:display "flex"
-                        :align-items "flex-end"
-                        :gap "10px"})
+            (dom/props {:class "mt-10 flex items-end gap-2"})
             (dom/p
-             (dom/style {:font-size "22px"})
+             (dom/props {:class "text-sm"})
              (dom/text "Files"))
             (dom/p
-             (dom/style {:font-size "16px"})
+             (dom/props {:class "text-base"})
              (dom/text "Upload your files and ask questions about them.")))
            (dom/div
-            (dom/style {:display "flex"
-                        :flex-direction "column"
-                        :gap "20px"})
+            (dom/props {:class "flex flex-col gap-5"})
             (e/server
              (e/for-by identity [file files] ; chat renders bottom up
                        (e/client
                         (when-not (empty? file)
                           (dom/div
-                           (dom/style {:display "flex"
-                                       :justify-content "space-between"
-                                       :gap "20px"})
-                           (dom/li (dom/style {:width "100%"})
+                           (dom/props {:class "flex justify-between gap-5"})
+                           (dom/li (dom/props {:class "w-full"})
                                    (dom/text file)))))))))
 
           ;; File Input
           (dom/div
-           (dom/style {:display "flex"
-                       :justify-content "space-between"
-                       :gap "20px"})
+           (dom/props {:class "flex justify-between gap-5"})
            (dom/input
             (dom/on "change"
                     (e/fn [e]
@@ -159,15 +125,7 @@
                         (swap! !state assoc :file first-file))
                       nil))
             (dom/props {:type "file"
-                        :style {:font-size "18px"
-                                :width "500px"
-                                :height "50px"
-                                :padding "10px"
-                                :border-radius "10px"
-                                ;; :display "inline-block"
-                                :vertical-align "middle"
-                                ;; :border "1px solid #000"
-                                }}))
+                        :class "text-sm w-100 h-10 p-2 border rounded-lg align-middle"}))
            (ui/button
             (e/fn []
               (let [array (new (e/task->cp (await-promise (-> @!state :file (.arrayBuffer)))))
@@ -179,13 +137,10 @@
                    (swap! !files #(conj (vec %) file))
                    (add db [doc]))))
               nil)
-            (dom/style {:font-size "18px"
-                        :padding "10px"
-                        :border-radius "10px"
-                        :border "1px solid #000"})
+            (dom/props {:class "text-sm p-2 border rounded"})
             (dom/div
              (dom/text "Add File")))))
          (catch Pending e
-           (dom/style {})))))))
+           (dom/props {})))))))
 
 
