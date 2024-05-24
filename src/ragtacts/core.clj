@@ -112,6 +112,15 @@
     :else (throw (ex-info (str "Unknown data source:" source) {:source source}))))
 
 (comment
+  (let [db (vector-store)
+        text (web/get-text "https://aws.amazon.com/what-is/retrieval-augmented-generation/")
+        rag-prompt (langchain/hub "rlm/rag-prompt")
+        question "What is RAG?"]
+    (add db [text])
+    (-> (ask (prompt rag-prompt {:context (str/join "\n" (search db question))
+                                 :question question}))
+        last
+        :ai))
 
   ;;
   )

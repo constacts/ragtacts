@@ -51,17 +51,22 @@
    ```
    "
   [s ctx]
-  (let [result (reduce (fn [s [k v]]
-                         (str/replace s (re-pattern (str "\\{\\s*" (name k) "\\s*\\}")) (str v)))
-                       s
-                       ctx)]
-    (if-let [[_ missing-key] (re-find #"\{\s*([^}]+)\s*\}" result)]
-      (let [k (str/trim missing-key)]
-        (throw (ex-info (str "Missing key: " k) {:key k})))
-      result)))
+  (let [get-value (fn [k]
+                    (if-let [v (get ctx (keyword k))]
+                      v
+                      (throw (ex-info (str "key not found: " k) {:key k}))))]
+    (loop [s s
+           result ""
+           k nil]
+      (if-let [c (first s)]
+        (cond
+          (and (= c \{) k) (recur (rest s) (str result c) "")
+          (= c \{) (recur (rest s) (str result) "")
+          (and (= c \}) k) (recur (rest s) (str result (get-value (str/trim k))) nil)
+          k (recur (rest s) result (str k c))
+          :else (recur (rest s) (str result c) nil))
+        result))))
 
 (comment
-  (f-string "Hello, {lang} { name }!" {:lang "Clojure"
-                                       :name "world"})
   ;;
   )
