@@ -5,7 +5,7 @@
         ring/ring                      {:mvn/version "1.11.0"}
         org.clojure/tools.logging      {:mvn/version "1.2.4"}
         ch.qos.logback/logback-classic {:mvn/version "1.4.14"}
-        com.constacts/ragtacts         {:mvn/version "0.3.1"}}
+        com.constacts/ragtacts         {:mvn/version "0.3.2"}}
  :aliases
  {:dev {:extra-paths ["src-dev"]
         :extra-deps  {thheller/shadow-cljs          {:mvn/version "2.26.2"}
