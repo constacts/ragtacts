@@ -15,7 +15,7 @@
          :or {optimize true, debug false, verbose false}
          :as config}
         (assoc argmap :hyperfiddle.electric/user-version electric-user-version)]
-    (b/delete {:path "resources/public/ragtacts_example/js"})
+    (b/delete {:path "resources/public/js"})
     (b/delete {:path "resources/electric-manifest.edn"})
 
     ; bake user-version into artifact, cljs and clj
@@ -51,12 +51,17 @@
 
   (b/copy-dir {:target-dir class-dir :src-dirs ["src" "src-prod" "resources"]})
   (let [jar-name (or (some-> jar-name str) ; override for Dockerfile builds to avoid needing to reconstruct the name
-                     (format "target/ragtacts-example-%s.jar" electric-user-version))
+                     (format "target/ragtacts-playground-%s.jar" electric-user-version))
         aliases [:prod]]
     (log/info `uberjar "included aliases:" aliases)
     (b/uber {:class-dir class-dir
              :uber-file jar-name
-             :basis     (b/create-basis {:project "deps.edn" :aliases aliases})})
+             :basis     (b/create-basis {:project "deps.edn" :aliases aliases})
+             :exclude ["LICENSE"
+                       #"^META-INF/license/LICENSE\.boringssl\.txt$"
+                       #"^META-INF/license/LICENSE\.mvn-wrapper\.txt$"
+                       #"^META-INF/license/LICENSE\.aix-netbsd\.txt$"
+                       #"^META-INF/license/LICENSE\.tomcat-native\.txt$"]})
     (log/info jar-name)))
 
 ;; clj -X:build:prod build-client

@@ -1,4 +1,4 @@
-(ns ragtacts.example.fullstack.server-jetty
+(ns ragtacts.playground.server-jetty
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
