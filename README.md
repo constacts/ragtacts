@@ -340,9 +340,9 @@ in the vector database synchronized with the changing data.
 
 ## Using Ragtacts RAG Playground
 
-The examples folder contains a RAG Playground created with electric. Run the Playground with 
-the following command and point your web browser to [http://localhost:8080](http://localhost:8080) 
-in your web browser.
+The examples folder contains a RAG Playground created with 
+[electric](https://github.com/hyperfiddle/electric). Run the Playground with the following command 
+and point your web browser to [http://localhost:8080](http://localhost:8080) in your web browser.
 
 ```bash
 $ cd examples/playground
