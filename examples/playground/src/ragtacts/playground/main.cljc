@@ -39,7 +39,7 @@
      (dom/props {:class "flex max-w-3xl items-center"})
      (dom/p (dom/text text))))))
 
-(e/defn Answer [text]
+(e/defn Answer [text files]
   (e/client
    (dom/div
     (dom/props {:class "mb-4 flex rounded-xl bg-white px-2 py-6 dark:bg-slate-900 sm:px-4"})
@@ -47,8 +47,17 @@
      (dom/props {:class "mr-2 flex h-8 w-8 rounded-full sm:mr-4"
                  :src "https://dummyimage.com/256x256/000000/ffffff&text=A"}))
     (dom/div
-     (dom/props {:class "flex max-w-3xl items-center rounded-xl"})
-     (dom/p (dom/text text))))))
+     (dom/props {:class "flex flex-col gap-5"})
+     (dom/div
+      (dom/props {:class "flex max-w-3xl items-center rounded-xl"})
+      (dom/p (dom/text text)))
+     (when (seq files)
+       (dom/div
+        (dom/props {:class "flex gap-2"})
+        (e/for-by identity [file files]
+                  (dom/span
+                   (dom/props {:class "rounded-xl bg-slate-100 px-4 py-2 text-gray-700 text-sm"})
+                   (dom/text (str "📁 " file))))))))))
 
 (defn await-promise "Returns a task completing with the result of given promise"
   [p]
@@ -63,15 +72,20 @@
    (swap! !msgs #(conj
                   (vec %)
                   {:user text}))
-   (let [new-msgs (conj (vec @!raw-msgs)
+   (let [chunks (map #(select-keys % [:text :metadata]) (search @!db text {:raw? true}))
+         new-msgs (conj (vec @!raw-msgs)
                         (prompt rag-prompt
-                                {:context (str/join "\n" (search @!db text))
+                                {:context (str/join "\n" chunks)
                                  :question text}))
          return-msgs (ask new-msgs)]
      (reset! !raw-msgs return-msgs)
      (swap! !msgs #(conj
                     (vec %)
-                    (last return-msgs))))))
+                    (assoc (last return-msgs)
+                           :files
+                           (distinct
+                            (map (fn [c]
+                                   (get (:metadata c) "filename")) chunks))))))))
 
 (defn scroll-bottom [el]
   (.scrollTo el 0 (.-scrollHeight el)))
@@ -90,7 +104,8 @@
 
 (e/defn Chat []
   (e/client
-   (let [!text (atom "")
+   (let [!loading? (atom false)
+         !text (atom "")
          text (e/watch !text)]
      (dom/div
       (dom/props {:class "flex h-[60vh] w-full flex-col"})
@@ -105,10 +120,11 @@
                     (e/client
                      (dom/div
                       (dom/props {:class "flex justify-between gap-5"})
-                      (let [[role content] (first msg)]
-                        (if (= :user role)
-                          (Question. content)
-                          (Answer. content))))
+                      (let [{:keys [ai user files]} msg]
+                        (cond
+                          user (Question. user)
+                          ai (Answer. ai files)
+                          :else nil)))
                      (chat-scroll-down))))))
 
     ;; prompt message input
@@ -118,38 +134,48 @@
         (dom/props {:class "sr-only"
                     :for "chat-input"})
         (dom/text "What can I help you with?"))
-       (dom/div
-        (dom/props {:class "relative"})
-        (ui/input
-         text (e/fn [v]
-                (reset! !text v))
-         (dom/props {:id "chat-input"
-                     :class "block w-full resize-none rounded-xl border-none bg-slate-50 p-4 
-                           pr-20 text-sm text-slate-900 focus:outline-none focus:ring-2 
-                           focus:ring-blue-500 dark:bg-slate-800 dark:text-slate-200 
-                           dark:placeholder-slate-400 dark:focus:ring-blue-500 sm:text-base"
-                     :placeholder "What can I help you with?"})
-         (dom/on "keydown" (e/fn [e]
-                             (when (and (= "Enter" (.-key e)) (not (.-isComposing e)))
-                               (ask-action. (.. e -target -value))
+       (try
+         (dom/div
+          (dom/props {:class "relative"})
+          (ui/input
+           text (e/fn [v]
+                  (reset! !text v))
+           (dom/props {:id "chat-input"
+                       :class "block w-full resize-none rounded-xl border-none bg-slate-50 p-4 
+                                  pr-20 text-sm text-slate-900 focus:outline-none focus:ring-2 
+                                  focus:ring-blue-500 dark:bg-slate-800 dark:text-slate-200 
+                                  dark:placeholder-slate-400 dark:focus:ring-blue-500 sm:text-base"
+                       :placeholder "What can I help you with?"})
+           (dom/on "keydown" (e/fn [e]
+                               (when (and (= "Enter" (.-key e)) (not (.-isComposing e)))
+                                 (reset! !loading? true)
+                                 (ask-action. (.. e -target -value))
+                                 (scroll-bottom (dom/by-id "chat-content"))
+                                 (reset! !text "")
+                                 (.blur (.-target e))))))
+          (dom/button
+           (dom/props {:type "button"
+                       :class "absolute bottom-2 right-2.5 rounded-lg bg-slate-600 px-4 py-2 text-sm 
+                                  font-medium text-slate-200 hover:bg-black focus:outline-none 
+                                  focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 
+                                  dark:hover:bg-blue-700 dark:focus:ring-blue-800 sm:text-base"})
+           (dom/on "click" (e/fn [e]
+                             (when (seq @!text)
+                               (reset! !loading? true)
+                               (ask-action. @!text)
                                (scroll-bottom (dom/by-id "chat-content"))
-                               (reset! !text "")
-                               (.blur (.-target e))))))
-        (dom/button
-         (dom/props {:type "button"
-                     :class "absolute bottom-2 right-2.5 rounded-lg bg-slate-600 px-4 py-2 text-sm 
-                           font-medium text-slate-200 hover:bg-black focus:outline-none 
-                           focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 
-                           dark:hover:bg-blue-700 dark:focus:ring-blue-800 sm:text-base"})
-         (dom/on "click" (e/fn [e]
-                           (when (seq @!text)
-                             (ask-action. @!text)
-                             (scroll-bottom (dom/by-id "chat-content"))
-                             (reset! !text ""))))
-         (dom/text "Send")
-         (dom/span
-          (dom/props {:class "sr-only"})
-          (dom/text "Send message")))))))))
+                               (reset! !text ""))))
+           (dom/text "Send")
+           (dom/span
+            (dom/props {:class "sr-only"})
+            (dom/text "Send message"))))
+         (catch Pending e
+           (when @!loading?
+             (dom/div
+              (dom/props {:class "flex justify-center text-gray-400 mt-2"})
+              (let [dots (apply str (repeat (int (mod e/system-time-secs 5)) " 🤖 "))]
+                (dom/text (str dots "🤖 AI is writing 🤖" dots))))
+             (reset! !loading? false)))))))))
 
 #?(:clj
    (defn add-file [db filename base64-data]
@@ -165,28 +191,36 @@
     (dom/label
      (dom/props {:class "text-base text-gray-500 font-semibold mb-2 block"})
      (dom/text "Upload document"))
-    (dom/input
-     (dom/props {:type "file"
-                 :class "w-full text-gray-400 font-semibold text-sm bg-white border 
+
+    (try
+      (dom/input
+       (dom/props {:type "file"
+                   :class "w-full text-gray-400 font-semibold text-sm bg-white border 
                          file:cursor-pointer cursor-pointer file:border-0 file:py-3 file:px-4 
                          file:mr-4 file:bg-gray-100 file:hover:bg-gray-200 file:text-gray-500 
                          rounded"})
-     (dom/on "change"
-             (e/fn [e]
-               (let [first-file (-> e .-target .-files (.item 0))
-                     array (new (e/task->cp (await-promise (.arrayBuffer first-file))))
-                     data (base64/encodeByteArray (new js/Uint8Array. array))
-                     filename (.-name first-file)]
-                 (e/server
-                  (let [input-stream (ByteArrayInputStream. (.decode (Base64/getDecoder) data))
-                        doc (doc/get-text input-stream)]
-                    (swap! !files #(conj (vec %) filename))
-                    (add @!db [doc])))
-                 (set! (.-value dom/node) ""))
-               nil)))
-    (dom/p
-     (dom/props {:class "text-xs text-gray-400 mt-2"})
-     (dom/text "PDF, DOC, PPT, XLS are Allowed")))))
+       (dom/on "change"
+               (e/fn [e]
+                 (let [first-file (-> e .-target .-files (.item 0))
+                       array (new (e/task->cp (await-promise (.arrayBuffer first-file))))
+                       data (base64/encodeByteArray (new js/Uint8Array. array))
+                       filename (.-name first-file)]
+                   (e/server
+                    (let [input-stream (ByteArrayInputStream. (.decode (Base64/getDecoder) data))
+                          doc (-> (doc/get-text input-stream)
+                                  (update :metadata assoc :filename filename))]
+                      (swap! !files #(conj (vec %) filename))
+                      (add @!db [doc])))
+                   (set! (.-value dom/node) ""))
+                 nil)))
+      (dom/p
+       (dom/props {:class "text-xs text-gray-400 mt-2"})
+       (dom/text "PDF, DOC, PPT, XLS are Allowed"))
+      (catch Pending _
+        (dom/div
+         (dom/props {:class "flex justify-center text-gray-400"})
+         (let [dots (apply str (repeat (int (mod e/system-time-secs 5)) " 🏃‍➡️ "))]
+           (dom/text (str dots "🏃‍➡️ Uploading 🏃‍➡️" dots)))))))))
 
 (e/defn Files []
   (e/client
@@ -212,11 +246,11 @@
                        (dom/tr
                         (dom/td
                          (dom/props {:class "border border-slate-300 p-4 text-slate-500"})
-                         (dom/text file)))))))
+                         (dom/text (str "📁 " file))))))))
         (dom/tr
          (dom/td
           (dom/props {:class "border border-slate-300 p-4 text-slate-500 text-center"})
-          (dom/text "Empty")))))))))
+          (dom/text "☁️ Upload your files and ask questions about them. ☁️")))))))))
 
 (e/defn Main [_]
   (e/client
