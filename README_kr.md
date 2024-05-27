@@ -315,6 +315,19 @@ Ragtacts에는 웹 페이지나 폴더에 내용이 바뀌면 바뀐 내용을 �
 (doc/stop-watch folder-wather)
 ```
 
+## RAG Playground 실행하기
+
+예제 폴더에는 electric으로 만든 RAG Playground가 있습니다. 다음 명령어로 Playground를 실행하고 웹 브라우저에서 
+[http://localhost:8080](http://localhost:8080)로 접속해보세요.
+
+```bash
+$ cd examples/playground
+$ clj -A:dev -X dev/-main
+```
+
+![Playground](./doc/images/playground.png)
+
+
 ## Ragtacts를 CLI로 사용하기
 
 Ragtacts는 CLI로 쓸 수도 있습니다. [Releases](https://github.com/constacts/ragtacts/releases/)에 있는 

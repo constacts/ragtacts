@@ -338,6 +338,19 @@ in the vector database synchronized with the changing data.
 (doc/stop-watch folder-wather)
 ```
 
+## Using Ragtacts RAG Playground
+
+The examples folder contains a RAG Playground created with electric. Run the Playground with 
+the following command and point your web browser to [http://localhost:8080](http://localhost:8080) 
+in your web browser.
+
+```bash
+$ cd examples/playground
+$ clj -A:dev -X dev/-main
+```
+
+![Playground](./doc/images/playground.png)
+
 ## Using Ragtacts as CLI
 
 Ragtacts can also be used as a CLI. Download the `ragtacts.jar` file from the 
