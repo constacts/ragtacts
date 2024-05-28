@@ -24,7 +24,8 @@
    - query: A string with the query.
    - params: A map with the following
      - `:raw?`: A boolean with the raw result.
-     - `:metadata-out-fields`: A list of strings with the metadata fields to output.
+     - `:metadata-out-fields`: A list of strings with the metadata fields to output. 
+       This option must be used with the value `raw?` `true`.
      - `:weights`: A list of floats with the weights.
      - `:c`: An integer with the c value.
    
