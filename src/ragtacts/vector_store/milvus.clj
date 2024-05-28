@@ -100,7 +100,7 @@
 (defmethod search :milvus
   ([db query]
    (search db query {}))
-  ([{:keys [embedding db]} query {:keys [top-k metadata raw?]}]
+  ([{:keys [embedding db]} query {:keys [top-k metadata raw? metadata-out-fields]}]
    (let [embeddings (embed embedding [query])
          collection (-> db :collection)]
      (with-open [client (milvus/client  (:params db))]
@@ -109,7 +109,8 @@
                                             :vectors (map #(map float %) embeddings)
                                             :expr (->expr metadata)
                                             :vector-field-name "vector"
-                                            :out-fields ["text" "vector"]
+                                            :out-fields (vec (set (concat metadata-out-fields
+                                                                          ["text" "vector"])))
                                             :top-k (int (or top-k 5))})
              docs (->> results
                        first
@@ -125,6 +126,5 @@
            (map :text docs)))))))
 
 (comment
-  (->expr {:a 1 :b 2})
   ;;
   )

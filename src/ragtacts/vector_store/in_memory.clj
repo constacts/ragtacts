@@ -1,17 +1,14 @@
 (ns ragtacts.vector-store.in-memory
-  (:require [clojure.walk :refer [stringify-keys]]
+  (:require [clojure.walk :refer [keywordize-keys stringify-keys]]
             [ragtacts.embedding.base :refer [embed text->doc]]
-            [ragtacts.vector-store.base :refer [add search]]
-            [ragtacts.splitter.base :refer [split]])
+            [ragtacts.splitter.base :refer [split]]
+            [ragtacts.vector-store.base :refer [add search]])
   (:import [dev.langchain4j.data.document Metadata]
            [dev.langchain4j.data.embedding Embedding]
            [dev.langchain4j.data.segment TextSegment]
-           [dev.langchain4j.store.embedding
-            EmbeddingSearchRequest
-            EmbeddingSearchResult
-            EmbeddingMatch]
-           [dev.langchain4j.store.embedding.inmemory InMemoryEmbeddingStore]
+           [dev.langchain4j.store.embedding EmbeddingMatch EmbeddingSearchRequest EmbeddingSearchResult]
            [dev.langchain4j.store.embedding.filter MetadataFilterBuilder]
+           [dev.langchain4j.store.embedding.inmemory InMemoryEmbeddingStore]
            [java.util HashMap]))
 
 (defn- doc->text-segment [{:keys [id
@@ -54,7 +51,7 @@
 (defmethod search :in-memory
   ([db query]
    (search db query {}))
-  ([{:keys [embedding db]} query {:keys [top-k metadata raw?]}]
+  ([{:keys [embedding db]} query {:keys [top-k metadata raw? metadata-out-fields]}]
    (let [embeddings (embed embedding [query])
          embedding (Embedding. (float-array (map float (first embeddings))))
          ^InMemoryEmbeddingStore store (:store db)
@@ -70,11 +67,18 @@
         (if raw?
           {:text (.text (.embedded match))
            :vector (map float (.vector (.embedding match)))
-           :metadata (into {} (.asMap (.metadata (.embedded match))))}
+           :metadata (keywordize-keys
+                      (select-keys
+                       (into {} (.asMap (.metadata (.embedded match))))
+                       metadata-out-fields))}
           (.text (.embedded match))))
       (.matches result)))))
 
 (comment
   (->filter {:a 1})
+
+  (select-keys {"a" 1 "b" 2} nil)
+
+
   ;;
   )

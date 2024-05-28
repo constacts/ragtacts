@@ -24,6 +24,7 @@
    - query: A string with the query.
    - params: A map with the following
      - `:raw?`: A boolean with the raw result.
+     - `:metadata-out-fields`: A list of strings with the metadata fields to output.
      - `:weights`: A list of floats with the weights.
      - `:c`: An integer with the c value.
    
@@ -35,6 +36,8 @@
    (search db \"Hello!\")
 
    (search db \"Hello!\" {:raw? true})
+
+   (search db \"Hello!\" {:raw? true :metadata-out-fields [\"filename\"]})
 
    (search [db1 db2] \"Hello!\" {:weights [0.5 0.5] :c 60})
    ```"
