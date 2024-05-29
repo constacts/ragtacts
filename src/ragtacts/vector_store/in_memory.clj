@@ -2,7 +2,8 @@
   (:require [clojure.walk :refer [keywordize-keys stringify-keys]]
             [ragtacts.embedding.base :refer [embed text->doc]]
             [ragtacts.splitter.base :refer [split]]
-            [ragtacts.vector-store.base :refer [add search]])
+            [ragtacts.vector-store.base :refer [add search delete]]
+            [clojure.set :refer [subset?]])
   (:import [dev.langchain4j.data.document Metadata]
            [dev.langchain4j.data.embedding Embedding]
            [dev.langchain4j.data.segment TextSegment]
@@ -74,11 +75,21 @@
           (.text (.embedded match))))
       (.matches result)))))
 
+(defn- get-private [obj field-name]
+  (let [field (.getDeclaredField (class obj) field-name)]
+    (.setAccessible field true)
+    (.get field obj)))
+
+(defmethod delete :in-memory [{:keys [db]} metadata]
+  (let [^InMemoryEmbeddingStore store (:store db)
+        entries (get-private store "entries")]
+    (doseq [entry entries]
+      (let [embedded (get-private entry "embedded")
+            entry-metadata (keywordize-keys (into {} (.asMap (.metadata embedded))))]
+        (when (subset? (set metadata) (set entry-metadata))
+          (.remove entries entry))))))
+
 (comment
-  (->filter {:a 1})
-
-  (select-keys {"a" 1 "b" 2} nil)
-
 
   ;;
   )

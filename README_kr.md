@@ -7,7 +7,7 @@ Ragtacts로 쉽게 LLM에게 물어보세요!
 - [English](./README.md)
 - [한국어](./README_kr.md)
 
-- [ractacts cljdoc](https://cljdoc.org/d/com.constacts/ragtacts/0.3.3/doc/readme)
+- [ractacts cljdoc](https://cljdoc.org/d/com.constacts/ragtacts/0.3.5/doc/readme)
 
 ## 준비물
 
@@ -28,7 +28,7 @@ $ brew install clojure/tools/clojure
 
 ```clojure
 {:deps
- {com.constacts/ragtacts {:mvn/version "0.3.3"}}}
+ {com.constacts/ragtacts {:mvn/version "0.3.5"}}}
 ```
 
 그리고 다음 명령어로 Clojure REPL을 실행합니다. ragtacts는 기본 LLM 모델로 OpenAI를 사용하기 때문에 OpenAI API 키가

@@ -7,7 +7,7 @@ Ask LLMs easily with Ragtacts!
 - [English](./README.md)
 - [한국어](./README_kr.md)
 
-- [ractacts cljdoc](https://cljdoc.org/d/com.constacts/ragtacts/0.3.3/doc/readme)
+- [ractacts cljdoc](https://cljdoc.org/d/com.constacts/ragtacts/0.3.5/doc/readme)
 
 ## Prerequisites
 
@@ -29,7 +29,7 @@ Create a `deps.edn` file and insert the following contents.
 
 ```clojure
 {:deps
- {com.constacts/ragtacts {:mvn/version "0.3.3"}}}
+ {com.constacts/ragtacts {:mvn/version "0.3.5"}}}
 ```
 
 Next, run the Clojure REPL with the following command. Since ragtacts uses OpenAI as the default 

@@ -32,11 +32,13 @@
 
 (defn- pdf-to-images-byte-array-list
   [pdf-input-stream {:keys [start-page end-page dpi ext]}]
-  (let [pd-document (PDDocument/load pdf-input-stream)
+  (let [real-start-page (dec start-page)
+        real-end-page end-page
+        pd-document (PDDocument/load pdf-input-stream)
         pdf-renderer (PDFRenderer. pd-document)
         pages (vec (.getPages pd-document))
         page-range (range-intersection-for-border-pairs [[0 (count pages)]
-                                                         [start-page end-page]])]
+                                                         [real-start-page real-end-page]])]
     (try
       (doall
        (map
