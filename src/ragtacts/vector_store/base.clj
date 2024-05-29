@@ -87,6 +87,23 @@
   [{:keys [embedding]} texts]
   (embedding/embed embedding texts))
 
+
+(defmulti delete
+  "Delete the documents in the database.
+   
+   Args:
+   - db: A map with the following
+     - `:type`: A keyword with the database type.
+   - metadata: A map with the metadata to delete. (required), No support for deletion without metadata.
+   
+   Example:
+   ```clojure
+   (delete db {:filename \"file.pdf\"})
+   ```
+   "
+  (fn [db metadata]
+    (-> db :db :type)))
+
 (comment
   ;;
   )

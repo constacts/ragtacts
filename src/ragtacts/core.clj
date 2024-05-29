@@ -50,6 +50,8 @@
 
 (def embed vector-store/embed)
 
+(def delete vector-store/delete)
+
 (defn vector-store
   "Return a vector store.
    
@@ -121,6 +123,5 @@
                                  :question question}))
         last
         :ai))
-
   ;;
   )

@@ -4,7 +4,7 @@
             [milvus-clj.core :as milvus]
             [ragtacts.embedding.base :refer [embed text->doc]]
             [ragtacts.splitter.base :refer [split]]
-            [ragtacts.vector-store.base :refer [add search]]))
+            [ragtacts.vector-store.base :refer [add search delete]]))
 
 (defn- make-field [[key value]]
   (merge {:name (name key)}
@@ -54,7 +54,7 @@
                                             {:name "vector" :values embeddings}]
                                            (map (fn [[key _]]
                                                   {:name (name key)
-                                                   :values (map #(-> % :metadata key) docs)})
+                                                   :values (map #(get (:metadata %) key) docs)})
                                                 metadata))})))
 
 (defn milvus
@@ -103,7 +103,7 @@
   ([{:keys [embedding db]} query {:keys [top-k metadata raw? metadata-out-fields]}]
    (let [embeddings (embed embedding [query])
          collection (-> db :collection)]
-     (with-open [client (milvus/client  (:params db))]
+     (with-open [client (milvus/client (:params db))]
        (let [results (milvus/search client {:collection-name collection
                                             :metric-type :l2
                                             :vectors (map #(map float %) embeddings)
@@ -125,6 +125,13 @@
            docs
            (map :text docs)))))))
 
+(defmethod delete :milvus [{:keys [db]} metadata]
+  (let [collection (-> db :collection)]
+    (with-open [client (milvus/client (:params db))]
+      (milvus/delete client {:collection-name collection
+                             :expr (->expr metadata)}))))
+
 (comment
+
   ;;
   )
