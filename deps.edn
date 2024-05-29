@@ -7,7 +7,7 @@
         cheshire/cheshire {:mvn/version "5.13.0"}
         org.clojure/tools.logging {:mvn/version "1.3.0"}
         ch.qos.logback/logback-classic {:mvn/version "1.4.14"}
-        com.constacts/milvus-clj {:mvn/version "0.2.1"}
+        com.constacts/milvus-clj {:mvn/version "0.2.2"}
         dev.langchain4j/langchain4j {:mvn/version "0.30.0"}
         dev.langchain4j/langchain4j-document-parser-apache-tika {:mvn/version "0.30.0"}
         dev.langchain4j/langchain4j-embeddings {:mvn/version "0.30.0"}
