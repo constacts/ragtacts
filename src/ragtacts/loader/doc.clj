@@ -1,14 +1,15 @@
 (ns ragtacts.loader.doc
   (:require [clj-ulid :refer [ulid]]
             [clojure.java.io :as io]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [nextjournal.beholder :as beholder])
   (:import [dev.langchain4j.data.document Document DocumentParser]
            [dev.langchain4j.data.document.parser.apache.tika ApacheTikaDocumentParser]
+           (java.io ByteArrayOutputStream)
            [org.apache.pdfbox.pdmodel PDDocument]
            [org.apache.pdfbox.rendering PDFRenderer]
            [org.apache.pdfbox.rendering ImageType]
-           [org.apache.pdfbox.tools.imageio ImageIOUtil]
-           (java.io ByteArrayOutputStream)))
+           [org.apache.pdfbox.tools.imageio ImageIOUtil]))
 
 (defn- range-intersection-for-border-pairs
   [range-border-pairs]
@@ -77,10 +78,15 @@
      :metadata {}}))
 
 (defn watch [{:keys [path last-change]} callback]
-  (throw (ex-info "Not implemented" {})))
+  (let [watcher-id (beholder/watch (fn [event]
+                                     (reset! last-change (System/currentTimeMillis))
+                                     (callback event))
+                                   path)]
+    watcher-id))
 
-(defn stop-watch [pool]
-  (throw (ex-info "Not implemented" {})))
+(defn stop-watch [watcher-id]
+  (beholder/stop watcher-id))
+
 
 (defn get-images-from-pdf
   "Return the image's byte-array list of a documnet.PDF supported.
