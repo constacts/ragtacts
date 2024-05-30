@@ -10,7 +10,6 @@
            [org.apache.pdfbox.tools.imageio ImageIOUtil]
            (java.io ByteArrayOutputStream)))
 
-
 (defn- range-intersection-for-border-pairs
   [range-border-pairs]
   (let [intersection-vec (reduce
@@ -32,23 +31,22 @@
         (when (not= baos nil) (.close baos))))))
 
 (defn- pdf-to-images-byte-array-list
-  [pdf-file {:keys [start-page end-page dpi ext]}]
-  (let [pd-document (PDDocument/load pdf-file)
+  [pdf-input-stream {:keys [start-page end-page dpi ext]}]
+  (let [real-start-page (dec start-page)
+        real-end-page end-page
+        pd-document (PDDocument/load pdf-input-stream)
         pdf-renderer (PDFRenderer. pd-document)
         pages (vec (.getPages pd-document))
         page-range (range-intersection-for-border-pairs [[0 (count pages)]
-                                                         [start-page end-page]])]
-
+                                                         [real-start-page real-end-page]])]
     (try
       (doall
        (map
         (fn [page-index]
           (let [image (.renderImageWithDPI pdf-renderer page-index dpi ImageType/RGB)]
             (image->byte-array {:image image
-                                :image-index page-index
                                 :ext ext
-                                :dpi dpi
-                                :base-path (.getAbsolutePath pdf-file)})))
+                                :dpi dpi})))
         page-range))
       (finally
         (if (not= pd-document nil)
@@ -87,19 +85,20 @@
 (defn get-images-from-pdf
   "Return the image's byte-array list of a documnet.PDF supported.
   Args:
-  - pdf-file-path: A string with the path of the pdf file.
+  - pdf-input-stream: An InputStream of a PDF file,
+   e.g.,  If you have a file `(clojure.java.io/input-stream \"/path/to/your/file.pdf\")
   - options: A map with the following keys
    - `:start-page`: A start page of the pdf file. (default 0)
    - `:end-page`: A last page of the pdf file. (default Integer/MAX_VALUE)
    - `dpi`: A number of dots that fit horizontally and vertically into a one-inch length. (default 300)
    - `ext`: A string with the extension of the image.(default 'png')"
-  [pdf-file-path & {:keys [start-page end-page dpi ext]
-                    :or {start-page 0
-                         end-page Integer/MAX_VALUE
-                         dpi 300
-                         ext "png"}}]
-  (pdf-to-images-byte-array-list (clojure.java.io/file pdf-file-path)
-                                 {:start-page start-page
-                                  :end-page end-page
-                                  :dpi dpi
-                                  :ext ext}))
+  [pdf-input-stream & {:keys [start-page end-page dpi ext]
+                       :or {start-page 0
+                            end-page Integer/MAX_VALUE
+                            dpi 300
+                            ext "png"}}]
+  (pdf-to-images-byte-array-list  pdf-input-stream
+                                  {:start-page start-page
+                                   :end-page end-page
+                                   :dpi dpi
+                                   :ext ext}))
