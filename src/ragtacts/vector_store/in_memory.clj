@@ -3,7 +3,8 @@
             [ragtacts.embedding.base :refer [embed text->doc]]
             [ragtacts.splitter.base :refer [split]]
             [ragtacts.vector-store.base :refer [add search delete]]
-            [clojure.set :refer [subset?]])
+            [clojure.set :refer [subset?]]
+            [clojure.java.io :as io])
   (:import [dev.langchain4j.data.document Metadata]
            [dev.langchain4j.data.embedding Embedding]
            [dev.langchain4j.data.segment TextSegment]
@@ -89,7 +90,28 @@
         (when (subset? (set metadata) (set entry-metadata))
           (.remove entries entry))))))
 
+(defn- create-parent-dir [filename]
+  (-> filename
+      io/file
+      .getParent
+      io/file
+      .mkdir))
+
+(defn save-to-file
+  "Save an in-memory vector store to a file."
+  [{:keys [db]} filename]
+  (let [^InMemoryEmbeddingStore store (:store db)]
+    (create-parent-dir filename)
+    (.serializeToFile store filename)))
+
+(defn load-from-file
+  "Load an in-memory vector store from a file."
+  [filename]
+  {:type :in-memory
+   :store (InMemoryEmbeddingStore/fromFile filename)})
+
 (comment
+
 
   ;;
   )
