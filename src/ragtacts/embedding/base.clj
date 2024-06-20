@@ -11,7 +11,7 @@
    
   Returns:
   - A list of float embeddings."
-  (fn [{:keys [type]} texts] type))
+  (fn [{:keys [type]} & params] type))
 
 (defn text->doc
   "Return a document from a text or a document.

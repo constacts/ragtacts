@@ -102,13 +102,13 @@
   [{:keys [db]} filename]
   (let [^InMemoryEmbeddingStore store (:store db)]
     (create-parent-dir filename)
-    (.serializeToFile store filename)))
+    (.serializeToFile store ^String filename)))
 
 (defn load-from-file
   "Load an in-memory vector store from a file."
   [filename]
   {:type :in-memory
-   :store (InMemoryEmbeddingStore/fromFile filename)})
+   :store (InMemoryEmbeddingStore/fromFile ^String filename)})
 
 (comment
 

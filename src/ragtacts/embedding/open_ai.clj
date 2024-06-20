@@ -14,10 +14,22 @@
    {:type :open-ai
     :model model}))
 
-(defmethod embed :open-ai [{:keys [model]} texts]
-  (try
-    (let [{:keys [data]} (openai/create-embedding {:model model
-                                                   :input texts})]
-      (map :embedding data))
-    (catch Exception e
-      (.printStackTrace e))))
+(defmethod embed :open-ai
+  ([embedder texts]
+   (embed embedder texts {}))
+  ([{:keys [model]} texts {:keys [raw?] :as opts}]
+   (try
+     (let [{:keys [data]} (openai/create-embedding {:model model
+                                                    :input texts}
+                                                   opts)]
+       (if raw?
+         data
+         (map :embedding data)))
+     (catch Exception e
+       (.printStackTrace e)))))
+
+(comment
+  (embed (open-ai-embedding) ["Hello, world!"] {:api-endpoint "http://localhost:3030"})
+
+  ;;
+  )
