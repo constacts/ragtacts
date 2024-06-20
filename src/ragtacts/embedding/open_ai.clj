@@ -23,7 +23,7 @@
      (let [{:keys [data]} (openai/create-embedding {:model model
                                                     :input texts}
                                                    opts)]
-       {:dense (map :embedding data)})
+       {:vectors (map :embedding data)})
      (catch Exception e
        (.printStackTrace e)))))
 
