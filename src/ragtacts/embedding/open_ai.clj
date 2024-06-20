@@ -12,7 +12,6 @@
    (open-ai-embedding {:model "text-embedding-3-small"}))
   ([{:keys [model]}]
    {:type :open-ai
-    :embedding-type :dense
     :model model}))
 
 (defmethod embed :open-ai
