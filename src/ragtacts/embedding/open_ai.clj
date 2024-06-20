@@ -12,24 +12,25 @@
    (open-ai-embedding {:model "text-embedding-3-small"}))
   ([{:keys [model]}]
    {:type :open-ai
+    :embedding-type :dense
     :model model}))
 
 (defmethod embed :open-ai
   ([embedder texts]
    (embed embedder texts {}))
-  ([{:keys [model]} texts {:keys [raw?] :as opts}]
+  ([{:keys [model]} texts opts]
    (try
      (let [{:keys [data]} (openai/create-embedding {:model model
                                                     :input texts}
                                                    opts)]
-       (if raw?
-         data
-         (map :embedding data)))
+       {:dense (map :embedding data)})
      (catch Exception e
        (.printStackTrace e)))))
 
 (comment
-  (embed (open-ai-embedding) ["Hello, world!"] {:api-endpoint "http://localhost:3030"})
+
+  (embed (open-ai-embedding)
+         ["Hello, world!"] {:api-endpoint "http://localhost:3030"})
 
   ;;
   )
