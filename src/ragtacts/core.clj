@@ -123,5 +123,14 @@
                                  :question question}))
         last
         :ai))
+
+  (let [db (vector-store {:embedding {:type :bge-m3}
+                          :db (milvus {:collection "test"})})]
+    #_(add db ["Artificial intelligence was founded as an academic discipline in 1956."
+               "Alan Turing was the first person to conduct substantial research in AI."
+               "Born in Maida Vale, London, Turing was raised in southern England."])
+    (search db "Where was Alan Turing born?" {:weights [0.5 0.5]}))
+
+
   ;;
   )

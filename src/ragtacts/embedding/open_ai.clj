@@ -26,10 +26,11 @@
      (catch Exception e
        (.printStackTrace e)))))
 
+
+
 (comment
 
-  (embed (open-ai-embedding)
-         ["Hello, world!"] {:api-endpoint "http://localhost:3030"})
+
 
   ;;
   )

@@ -4,7 +4,8 @@
             [milvus-clj.core :as milvus]
             [ragtacts.embedding.base :refer [embed text->doc]]
             [ragtacts.splitter.base :refer [split]]
-            [ragtacts.vector-store.base :refer [add search delete]]))
+            [ragtacts.vector-store.base :refer [add search delete]])
+  (:import [java.util TreeMap]))
 
 (defn- make-field [[key value]]
   (merge {:name (name key)}
@@ -21,41 +22,64 @@
 (defn- create-collection [client collection-name docs embeddings]
   (let [metadata (:metadata (first docs))
         metadata-fields (map make-field metadata)]
-    (milvus/create-collection client {:collection-name collection-name
-                                      :field-types (concat [{:primary-key? true
-                                                             :auto-id? true
-                                                             :data-type :int64
-                                                             :name "pk"}
-                                                            {:data-type :var-char
-                                                             :max-length 65535
-                                                             :name "id"}
-                                                            {:data-type :float-vector
-                                                             :name "vector"
-                                                             :dimension (count (first embeddings))}
-                                                            {:data-type :var-char
-                                                             :max-length 65535
-                                                             :name "text"}]
-                                                           metadata-fields)})))
+    (milvus/create-collection
+     client
+     {:collection-name collection-name
+      :field-types (concat [{:primary-key? true
+                             :auto-id? true
+                             :data-type :int64
+                             :name "pk"}
+                            {:data-type :var-char
+                             :max-length 65535
+                             :name "id"}
+                            {:data-type :var-char
+                             :max-length 65535
+                             :name "text"}]
+                           (when (:vectors embeddings)
+                             [{:data-type :float-vector
+                               :name "vector"
+                               :dimension (count (first (:vectors embeddings)))}])
+                           (when (:sparse-vectors embeddings)
+                             [{:data-type :sparse-float-vector
+                               :name "sparse_vector"}])
+                           metadata-fields)})))
 
-(defn- create-index [client collection-name]
-  (milvus/create-index client {:collection-name collection-name
-                               :field-name "vector"
-                               :index-type :hnsw
-                               :index-name "vector"
-                               :metric-type :l2
-                               :extra-param (json/generate-string {:M 8 :efConstruction 60})})
+(defn- create-index [client collection-name embeddings]
+  (when (:vectors embeddings)
+    (milvus/create-index client {:collection-name collection-name
+                                 :field-name "vector"
+                                 :index-type :hnsw
+                                 :index-name "vector"
+                                 :metric-type :l2
+                                 :extra-param (json/generate-string {:M 8 :efConstruction 60})}))
+  (when (:sparse-vectors embeddings)
+    (milvus/create-index client {:collection-name collection-name
+                                 :field-name "sparse_vector"
+                                 :index-type :sparse-inverted-index
+                                 :index-name "sparse_vector"
+                                 :metric-type :ip}))
   (milvus/load-collection client {:collection-name collection-name}))
+
+(defn- ->sorted-map [sparse-vector]
+  (let [m (TreeMap.)]
+    (doseq [{:keys [index value]} sparse-vector]
+      (.put m (long index) (float value)))
+    m))
 
 (defn- insert-all [client collection-name docs embeddings]
   (let [metadata (:metadata (first docs))]
-    (milvus/insert client {:collection-name collection-name
-                           :fields (concat [{:name "id" :values (map :id docs)}
-                                            {:name "text" :values (map :text docs)}
-                                            {:name "vector" :values embeddings}]
-                                           (map (fn [[key _]]
-                                                  {:name (name key)
-                                                   :values (map #(get (:metadata %) key) docs)})
-                                                metadata))})))
+    (milvus/insert client
+                   {:collection-name collection-name
+                    :fields (concat [{:name "id" :values (map :id docs)}
+                                     {:name "text" :values (map :text docs)}]
+                                    (when (:vectors embeddings)
+                                      [{:name "vector" :values (map #(map float %) (:vectors embeddings))}])
+                                    (when (:sparse-vectors embeddings)
+                                      [{:name "sparse_vector" :values (map ->sorted-map (:sparse-vectors embeddings))}])
+                                    (map (fn [[key _]]
+                                           {:name (name key)
+                                            :values (map #(get (:metadata %) key) docs)})
+                                         metadata))})))
 
 (defn milvus
   "Return a Milvus vector store.
@@ -81,11 +105,10 @@
     (with-open [client (milvus/client (:params db))]
       (try
         (create-collection client collection chunked-docs embeddings)
-        (create-index client collection)
-        (insert-all client collection chunked-docs (map #(map float %) embeddings))
+        (create-index client collection embeddings)
+        (insert-all client collection chunked-docs embeddings)
         (catch Exception e
           (.printStackTrace e))))))
-
 
 (defn- ->expr [metadata]
   (when metadata
@@ -100,27 +123,51 @@
 (defmethod search :milvus
   ([db query]
    (search db query {}))
-  ([{:keys [embedding db]} query {:keys [top-k metadata raw? metadata-out-fields]}]
+  ([{:keys [embedding db]} query {:keys [top-k metadata raw? metadata-out-fields weights]}]
    (let [embeddings (embed embedding [query])
-         collection (-> db :collection)]
+         collection (-> db :collection)
+         hybrid? (and (seq (:vectors embeddings)) (seq (:sparse-vectors embeddings)))]
      (with-open [client (milvus/client (:params db))]
-       (let [results (milvus/search client {:collection-name collection
-                                            :metric-type :l2
-                                            :vectors (map #(map float %) embeddings)
-                                            :expr (->expr metadata)
-                                            :vector-field-name "vector"
-                                            :out-fields (vec (set (concat metadata-out-fields
-                                                                          ["text" "vector"])))
-                                            :top-k (int (or top-k 5))})
+       (let [results (if hybrid?
+                       (milvus/hybrid-search client {:collection-name collection
+                                                     :out-fields (vec (set (concat metadata-out-fields
+                                                                                   ["text"
+                                                                                    "vector"
+                                                                                    "sparse_vector"])))
+                                                     :top-k (int (or top-k 5))
+                                                     :ranker {:type :weighted
+                                                              :weights weights}
+                                                     :search-requests
+                                                     [{:vector-field-name "vector"
+                                                       :metric-type :l2
+                                                       :float-vectors (map #(map float %) (:vectors embeddings))
+                                                       :expr (->expr metadata)
+                                                       :top-k (int (or top-k 5))}
+                                                      {:vector-field-name "sparse_vector"
+                                                       :metric-type :ip
+                                                       :sparse-float-vectors (map ->sorted-map (:sparse-vectors embeddings))
+                                                       :expr (->expr metadata)
+                                                       :top-k (int (or top-k 5))}]})
+                       (milvus/search client {:collection-name collection
+                                              :metric-type :l2
+                                              :vectors (map #(map float %) embeddings)
+                                              :expr (->expr metadata)
+                                              :vector-field-name "vector"
+                                              :out-fields (vec (set (concat metadata-out-fields
+                                                                            ["text" "vector"])))
+                                              :top-k (int (or top-k 5))}))
              docs (->> results
                        first
                        (map (fn [{:keys [entity]}]
-                              {:text (get entity "text")
-                               :vector  (get entity "vector")
-                               :metadata (->
-                                          (into {} entity)
-                                          keywordize-keys
-                                          (dissoc :vector :text))})))]
+                              (let [result {:text (get entity "text")
+                                            :vector  (get entity "vector")
+                                            :metadata (->
+                                                       (into {} entity)
+                                                       keywordize-keys
+                                                       (dissoc :vector :text))}]
+                                (if hybrid?
+                                  (assoc result :sparse-vector (get entity "sparse_vector"))
+                                  result)))))]
          (if raw?
            docs
            (map :text docs)))))))
@@ -132,6 +179,7 @@
                              :expr (->expr metadata)}))))
 
 (comment
+
 
   ;;
   )

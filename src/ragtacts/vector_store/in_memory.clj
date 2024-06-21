@@ -37,7 +37,7 @@
     (.addAll store
              (map (fn [vectors]
                     (Embedding. (float-array (map float vectors))))
-                  embeddings)
+                  (:vectors embeddings))
              (map doc->text-segment chunked-docs))))
 
 (defn- ->filter [metadata]
@@ -55,7 +55,7 @@
    (search db query {}))
   ([{:keys [embedding db]} query {:keys [top-k metadata raw? metadata-out-fields]}]
    (let [embeddings (embed embedding [query])
-         embedding (Embedding. (float-array (map float (first embeddings))))
+         embedding (Embedding. (float-array (map float (first (:vectors embeddings)))))
          ^InMemoryEmbeddingStore store (:store db)
          filter (->filter metadata)
          ^EmbeddingSearchResult result (.search store
