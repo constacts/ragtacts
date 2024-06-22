@@ -28,8 +28,7 @@ Create a `deps.edn` file and insert the following contents.
 [![Clojars Project](https://img.shields.io/clojars/v/com.constacts/ragtacts.svg)](https://clojars.org/com.constacts/ragtacts)
 
 ```clojure
-{:deps
- {com.constacts/ragtacts {:mvn/version "0.3.7"}}}
+com.constacts/ragtacts {:mvn/version "0.3.8"}
 ```
 
 Next, run the Clojure REPL with the following command. Since ragtacts uses OpenAI as the default 
