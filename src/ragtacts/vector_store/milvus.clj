@@ -128,49 +128,42 @@
          collection (-> db :collection)
          hybrid? (and (seq (:vectors embeddings)) (seq (:sparse-vectors embeddings)))]
      (with-open [client (milvus/client (:params db))]
-       (let [results (if hybrid?
-                       (milvus/hybrid-search client {:collection-name collection
-                                                     :out-fields (vec (set (concat metadata-out-fields
-                                                                                   ["text"
-                                                                                    "vector"
-                                                                                    "sparse_vector"])))
-                                                     :top-k (int (or top-k 5))
-                                                     :ranker {:type :weighted
-                                                              :weights weights}
-                                                     :search-requests
-                                                     [{:vector-field-name "vector"
-                                                       :metric-type :l2
-                                                       :float-vectors (map #(map float %) (:vectors embeddings))
-                                                       :expr (->expr metadata)
-                                                       :top-k (int (or top-k 5))}
-                                                      {:vector-field-name "sparse_vector"
-                                                       :metric-type :ip
-                                                       :sparse-float-vectors (map ->sorted-map (:sparse-vectors embeddings))
-                                                       :expr (->expr metadata)
-                                                       :top-k (int (or top-k 5))}]})
-                       (milvus/search client {:collection-name collection
-                                              :metric-type :l2
-                                              :vectors (map #(map float %) embeddings)
-                                              :expr (->expr metadata)
-                                              :vector-field-name "vector"
-                                              :out-fields (vec (set (concat metadata-out-fields
-                                                                            ["text" "vector"])))
-                                              :top-k (int (or top-k 5))}))
-             docs (->> results
-                       first
-                       (map (fn [{:keys [entity]}]
-                              (let [result {:text (get entity "text")
-                                            :vector  (get entity "vector")
-                                            :metadata (->
-                                                       (into {} entity)
-                                                       keywordize-keys
-                                                       (dissoc :vector :text))}]
-                                (if hybrid?
-                                  (assoc result :sparse-vector (get entity "sparse_vector"))
-                                  result)))))]
+       (let [[result] (if hybrid?
+                        (milvus/hybrid-search client {:collection-name collection
+                                                      :out-fields (vec (set (concat metadata-out-fields
+                                                                                    ["text"
+                                                                                     "vector"
+                                                                                     "sparse_vector"])))
+                                                      :top-k (int (or top-k 5))
+                                                      :ranker {:type :weighted
+                                                               :weights weights}
+                                                      :search-requests
+                                                      [{:vector-field-name "vector"
+                                                        :metric-type :l2
+                                                        :float-vectors (map #(map float %) (:vectors embeddings))
+                                                        :expr (->expr metadata)
+                                                        :top-k (int (or top-k 5))}
+                                                       {:vector-field-name "sparse_vector"
+                                                        :metric-type :ip
+                                                        :sparse-float-vectors (map ->sorted-map (:sparse-vectors embeddings))
+                                                        :expr (->expr metadata)
+                                                        :top-k (int (or top-k 5))}]})
+                        (milvus/search client {:collection-name collection
+                                               :metric-type :l2
+                                               :vectors (map #(map float %) embeddings)
+                                               :expr (->expr metadata)
+                                               :vector-field-name "vector"
+                                               :out-fields (vec (set (concat metadata-out-fields
+                                                                             ["text" "vector"])))
+                                               :top-k (int (or top-k 5))}))
+             docs (->> result
+                       (map (fn [{:keys [id distance entity]}]
+                              {:id id
+                               :distance distance
+                               :entity (keywordize-keys (into {} entity))})))]
          (if raw?
            docs
-           (map :text docs)))))))
+           (map #(-> % :entity :text) docs)))))))
 
 (defmethod delete :milvus [{:keys [db]} metadata]
   (let [collection (-> db :collection)]

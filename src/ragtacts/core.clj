@@ -124,12 +124,36 @@
         last
         :ai))
 
+  (require '[ragtacts.embedding.base :refer [embed]])
+  (require '[wkok.openai-clojure.api :as openai])
+
+  (defmethod embed :bge-m3
+    ([embedder texts]
+     (embed embedder texts {}))
+    ([{:keys [model]} texts opts]
+     (try
+       (let [{:keys [data]} (openai/create-embedding {:model model
+                                                      :input texts}
+                                                     {:api-endpoint "http://localhost:3030"})
+             dense (->> data
+                        (filter #(= "dense" (:object %)))
+                        (map :embedding))
+             sparse (->> data
+                         (filter #(= "sparse" (:object %)))
+                         (map :embedding))]
+         {:vectors dense
+          :sparse-vectors sparse})
+       (catch Exception e
+         (.printStackTrace e)))))
+
   (let [db (vector-store {:embedding {:type :bge-m3}
                           :db (milvus {:collection "test"})})]
     #_(add db ["Artificial intelligence was founded as an academic discipline in 1956."
                "Alan Turing was the first person to conduct substantial research in AI."
                "Born in Maida Vale, London, Turing was raised in southern England."])
-    (search db "Where was Alan Turing born?" {:weights [0.5 0.5]}))
+    (search db "Where was Alan Turing born?" {:weights [0.5 0.5]
+                                              :metadata-out-fields ["pk"]
+                                              :raw? false}))
 
 
   ;;
