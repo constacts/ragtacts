@@ -27,7 +27,7 @@ $ brew install clojure/tools/clojure
 [![Clojars Project](https://img.shields.io/clojars/v/com.constacts/ragtacts.svg)](https://clojars.org/com.constacts/ragtacts)
 
 ```clojure
-com.constacts/ragtacts {:mvn/version "0.3.8"}
+com.constacts/ragtacts {:mvn/version "0.4.0"}
 ```
 
 그리고 다음 명령어로 Clojure REPL을 실행합니다. ragtacts는 기본 LLM 모델로 OpenAI를 사용하기 때문에 OpenAI API 키가
