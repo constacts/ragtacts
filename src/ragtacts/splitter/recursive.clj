@@ -23,9 +23,9 @@
            (let [{:keys [size overlap]} (:opts splitter)
                  ^DocumentSplitter splitter (DocumentSplitters/recursive size overlap (OpenAiTokenizer.))
                  text-segments (.split splitter (Document. text))]
-             (mapv (fn [^TextSegment segment]
+             (mapv (fn [[i ^TextSegment segment]]
                      {:id id
                       :text (.text segment)
-                      :metadata metadata})
-                   text-segments)))
+                      :metadata (assoc metadata :seq i)})
+                   (map-indexed vector text-segments))))
          docs)))
