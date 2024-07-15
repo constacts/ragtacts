@@ -6,7 +6,7 @@
             [deps-deploy.deps-deploy :as dd]))
 
 (def lib 'com.constacts/ragtacts)
-(def version "0.4.1")
+(def version "0.5.0-SNAPSHOT")
 #_; alternatively, use MAJOR.MINOR.COMMITS:
   (def version (format "1.0.%s" (b/git-count-revs nil)))
 (def main-cls (string/join "." (filter some? [(name lib) "main"])))
