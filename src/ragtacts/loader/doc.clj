@@ -6,7 +6,7 @@
   (:import [dev.langchain4j.data.document Document DocumentParser]
            [dev.langchain4j.data.document.parser.apache.tika ApacheTikaDocumentParser]
            (java.io ByteArrayOutputStream)
-           [org.apache.pdfbox.pdmodel PDDocument]
+           [org.apache.pdfbox Loader]
            [org.apache.pdfbox.rendering PDFRenderer]
            [org.apache.pdfbox.rendering ImageType]
            [org.apache.pdfbox.tools.imageio ImageIOUtil]))
@@ -35,7 +35,7 @@
   [pdf-input-stream {:keys [start-page end-page dpi ext]}]
   (let [real-start-page (dec start-page)
         real-end-page end-page
-        pd-document (PDDocument/load pdf-input-stream)
+        pd-document (Loader/loadPDF pdf-input-stream)
         pdf-renderer (PDFRenderer. pd-document)
         pages (vec (.getPages pd-document))
         page-range (range-intersection-for-border-pairs [[0 (count pages)]

@@ -1,10 +1,10 @@
 (ns ragtacts.splitter.recursive
   (:require [ragtacts.splitter.base :refer [split]])
   (:import [dev.langchain4j.data.document DocumentSplitter]
-           [dev.langchain4j.data.document Document]
+           [dev.langchain4j.data.document DefaultDocument]
            [dev.langchain4j.data.document.splitter DocumentSplitters]
            [dev.langchain4j.data.segment TextSegment]
-           [dev.langchain4j.model.openai OpenAiTokenizer]))
+           [dev.langchain4j.model.openai OpenAiTokenCountEstimator]))
 
 (defn recursive-splitter
   "Return a recursive splitter.
@@ -21,8 +21,8 @@
   (flatten
    (mapv (fn [{:keys [id text metadata]}]
            (let [{:keys [size overlap]} (:opts splitter)
-                 ^DocumentSplitter splitter (DocumentSplitters/recursive size overlap (OpenAiTokenizer.))
-                 text-segments (.split splitter (Document. text))]
+                 ^DocumentSplitter splitter (DocumentSplitters/recursive size overlap (OpenAiTokenCountEstimator. "gpt-4o-mini"))
+                 text-segments (.split splitter (DefaultDocument. text))]
              (mapv (fn [[i ^TextSegment segment]]
                      {:id id
                       :text (.text segment)

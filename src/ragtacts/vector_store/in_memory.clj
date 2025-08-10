@@ -86,7 +86,7 @@
            :vector (map float (.vector (.embedding match)))
            :metadata (keywordize-keys
                       (select-keys
-                       (into {} (.asMap (.metadata (.embedded match))))
+                       (into {} (.toMap (.metadata (.embedded match))))
                        metadata-out-fields))}
           (.text (.embedded match))))
       (.matches result)))))
@@ -101,7 +101,7 @@
         entries (get-private store "entries")]
     (doseq [entry entries]
       (let [embedded (get-private entry "embedded")
-            entry-metadata (keywordize-keys (into {} (.asMap (.metadata embedded))))]
+            entry-metadata (keywordize-keys (into {} (.toMap (.metadata embedded))))]
         (when (subset? (set metadata) (set entry-metadata))
           (.remove entries entry))))))
 

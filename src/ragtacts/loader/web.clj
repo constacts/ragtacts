@@ -3,7 +3,7 @@
             [overtone.at-at :as at]
             [hato.client :as http])
   (:import [dev.langchain4j.data.document Document]
-           [dev.langchain4j.data.document.transformer HtmlTextExtractor]))
+           [dev.langchain4j.data.document.transformer.jsoup HtmlToTextDocumentTransformer]))
 
 (defn- html? [headers]
   (str/starts-with? (get headers "content-type") "text/html"))
@@ -37,7 +37,7 @@
          content-type (get headers "content-type")]
      (case status
        200 (if (html? headers)
-             (let [^Document doc (.transform (HtmlTextExtractor.) (Document/from body))]
+             (let [^Document doc (.transform (HtmlToTextDocumentTransformer.) (Document/from body))]
                ^{:last-change last-change} {:id (str url)
                                             :text (.text doc)
                                             :metadata {}})
